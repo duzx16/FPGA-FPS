@@ -24,7 +24,7 @@ entity vga_calc is
 		--POST
 		postX:in std_logic_vector(9 downto 0);
 		postY:in std_logic_vector(8 downto 0);
-		post_select:in std_logic;  --准星选中，开火或者选物品
+		post_select:in std_logic;  --鍑嗘槦閫変腑锛屽紑鐏垨鑰呴€夌墿鍝
 		
 		--ME
 		--meX:in std_logic_vector(9 downto 0);
@@ -36,7 +36,7 @@ entity vga_calc is
 		--enemy
 		--enemy_X: in std_logic_vector(9 downto 0);
 		--enemy_Y : in std_logic_vector(8 downto 0);
-		--enemy_type: in enemy_type_matrix; --待定
+		--enemy_type: in enemy_type_matrix; --寰呭畾
 		--enemy_firing:in std_logic;
 		
 		--objs
@@ -58,8 +58,8 @@ architecture bhv of vga_calc is
 	component vga640480 is
 		port(
 			reset       :         in  STD_LOGIC;
-			clk_0       :         in  STD_LOGIC; --100M时钟输入
-			hs,vs       :         out STD_LOGIC; --行同步、场同步信号
+			clk_0       :         in  STD_LOGIC; --100M鏃堕挓杈撳叆
+			hs,vs       :         out STD_LOGIC; --琛屽悓姝ャ€佸満鍚屾淇″彿
 			vector_x_out   :   out std_LOGIC_VECTOR(9 downto 0);
 			vector_y_out :     out std_LOGIC_vector(8 downto 0);
 			clk50 : out std_logic;
@@ -208,41 +208,53 @@ end process;
  	--end if;
 	  --enemyOK <= '1';
 --end process;
---process(clk_0)
---begin
---	gunOK <= '0';
---	enemyOK <= '0';
---	medicalOK <= '0';
---	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
---		case object_types(cnt) is
---			when enemy =>
---				if(object_xs(cnt) <= s_x + 16 and s_x < object_xs(cnt) + 16 and object_ys(cnt) <= s_y + 40 and s_y < object_ys(cnt) + 40) then
---					enemy_x <= s_x + 16 - object_xs(cnt);
---					enemy_y <= s_y + 40 - object_ys(cnt);
---					isenemyPixel := '1';
---					enemyOK <= '1';	
---					exit get_obj;
---				end if;
---			when medical=>
---				if(object_xs(cnt) <= s_x + 8 and s_x < object_xs(cnt) + 8 and object_ys(cnt) <= s_y + 8 and s_y < object_ys(cnt) + 8) then
---					medical_x <= s_x + 8 - object_xs(cnt);
---					medical_y <= s_y + 8 - object_ys(cnt);
---					isMedicalPixel := '1';
---					medicalOK <= '1';
---					exit get_obj;
---				end if;
---			when tommygun=>
---				if(object_xs(cnt) <= s_x + 45 and s_x < object_xs(cnt) + 45 and object_ys(cnt) <= s_y + 15 and s_y < object_ys(cnt) + 15) then
---					gun_x <= s_x + 45 - object_xs(cnt);
---					gun_y <= s_y + 15 - object_ys(cnt);
---					isGunPixel := '1';
---					gunOK <= '1';
---					exit get_obj;
---				end if;
---			when none => NULL;
---		end case;
---	end loop get_obj;
---end process;
+process(clk_0)
+begin
+	gunOK <= '0';
+	enemyOK <= '0';
+	medicalOK <= '0';
+	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
+		case object_types(cnt) is
+			when enemy =>
+				if(object_xs(cnt) <= s_x + 16 and s_x < object_xs(cnt) + 16 and object_ys(cnt) <= s_y + 40 and s_y < object_ys(cnt) + 40) then
+					enemy_x <= s_x + 16 - object_xs(cnt);
+					enemy_y <= s_y + 40 - object_ys(cnt);
+					isenemyPixel := '1';
+					exit get_obj;
+				else
+					isenemyPixel := '0';
+					next get_obj;
+				end if;
+				enemyOK <= '1';
+			when medical=>
+				if(object_xs(cnt) <= s_x + 8 and s_x < object_xs(cnt) + 8 and object_ys(cnt) <= s_y + 8 and s_y < object_ys(cnt) + 8) then
+					medical_x <= s_x + 8 - object_xs(cnt);
+					medical_y <= s_y + 8 - object_ys(cnt);
+					isMedicalPixel := '1';
+					exit get_obj;
+				else
+					isMedicalPixel := '0';
+					next get_obj;
+				end if;
+				medicalOK <= '1';
+			when tommygun=>
+				if(object_xs(cnt) <= s_x + 45 and s_x < object_xs(cnt) + 45 and object_ys(cnt) <= s_y + 15 and s_y < object_ys(cnt) + 15) then
+					gun_x <= s_x + 45 - object_xs(cnt);
+					gun_y <= s_y + 15 - object_ys(cnt);
+					isGunPixel := '1';
+					exit get_obj;
+				else
+					isGunPixel := '0';
+					next get_obj;
+				end if;
+				gunOK <= '1';
+			when none => NULL;
+		end case;
+	end loop get_obj;
+	gunOK <= '1';
+	enemyOK <= '1';
+	medicalOK <= '1';
+end process;
 -----------------------------Me--------------------------------------
 process(clk_0)
 begin
@@ -283,14 +295,14 @@ begin
 	end if;
 	
 	-------------------TODO-----------------------
-	-----------游戏开始是黄色界面------------
+	-----------娓告垙寮€濮嬫槸榛勮壊鐣岄潰------------
 	if(gamestart = '1') then                           
 		if(isGameStartPixel = '1') then
 			q_vga <= "0111111000";
 		else
 			q_vga <= "0000001001";
 		end if;
-	-----------游戏开始是红色界面------------
+	-----------娓告垙寮€濮嬫槸绾㈣壊鐣岄潰------------
 	elsif(gameover = '1') then
 		if isGameOverPixel <= '1' then
 			q_vga <= "0111000000";
@@ -298,20 +310,20 @@ begin
 			q_vga <= "0000001001";
 		end if;
 	else
-		if(isHpPixel = '1' and hpOK = '1') then   --血量红色
+		if(isHpPixel = '1' and hpOK = '1') then   --琛€閲忕孩鑹
 			q_vga <= "0111000000";
 		---------elsif() then----------------------
-		elsif(isBulletNumPixel = '1' and bulletnumOK = '1') then  --子弹数量蓝色
+		elsif(isBulletNumPixel = '1' and bulletnumOK = '1') then  --瀛愬脊鏁伴噺钃濊壊
 			q_vga <= "0000000111";
-		elsif(isPostPixel = '1' and postOK = '1') then  --准星白色
+		elsif(isPostPixel = '1' and postOK = '1') then  --鍑嗘槦鐧借壊
 			q_vga <= "0000000000";
-		elsif(isGunPixel = '1' and gunOK = '1')then  --枪鬼知道显示出来什么颜色
+		elsif(isGunPixel = '1' and gunOK = '1')then  --鏋鐭ラ亾鏄剧ず鍑烘潵浠€涔堥鑹
 			q_vga <= "0111100001";
-		elsif(isMedicalPixel = '1' and medicalOK = '1') then  --医药包白色
-			q_vga <= "0111000000";
-		elsif(isMePixel = '1' and meOK = '1') then  --我是绿色
+		elsif(isMedicalPixel = '1' and medicalOK = '1') then  --鍖昏嵂鍖呯櫧鑹
+			q_vga <= "0000111111";
+		elsif(isMePixel = '1' and meOK = '1') then  --鎴戞槸缁胯壊
 			q_vga <= "0000111000";
-		elsif(isenemyPixel = '1' and enemyOK = '1') then  --敌人黄色
+		elsif(isenemyPixel = '1' and enemyOK = '1') then  --鏁屼汉榛勮壊
 			q_vga <= "0111111000";
 		else
 			q_vga <= "0111111111";

@@ -58,8 +58,7 @@ component game_controller is
 		start_stage: out std_logic;
 		game_over_stage: out std_logic;
 		-- 表示修改数据是否安全
-		data_safe: in std_logic;
-		output: out std_logic
+		data_safe: in std_logic
 	);
 end component;
 
@@ -174,9 +173,8 @@ begin
 		start_stage => start_stage,
 		game_over_stage => game_over_stage,
 		-- 表示修改数据是否安全
-		data_safe => data_safe,
-		output => output
-	);
+		data_safe => data_safe
+		);
 	u1:color_controller port map(
 		clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, player_hp, bullet_num
 		,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), open_fire, data_safe

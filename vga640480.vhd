@@ -95,9 +95,9 @@ begin
 	   		vs1 <= '1';
 	  	elsif clk'event and clk='1' then
 	   		if vector_y>=490 and vector_y<492 then
-	    		vs1 <= '0';
-	   		else
 	    		vs1 <= '1';
+	   		else
+	    		vs1 <= '0';
 	   		end if;
 	  	end if;
 	 end process;

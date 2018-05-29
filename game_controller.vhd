@@ -93,9 +93,11 @@ begin
 		for i in 0 to OBJECT_LIMIT - 1 loop
 		  object_types(i) <= none;
 		end loop;
-		object_types(0) <= enemy;
+		object_types(0) <= tommygun;
 		object_values(0) <= 100;
-		object_counts(0) <= 100;
+		object_counts(0) <= 0;
+		object_xs(0) <= 320;
+		object_ys(0) <= 240;
 	elsif rising_edge(clk) then
 		case control_state is
 			when waiting =>
