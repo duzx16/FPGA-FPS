@@ -90,9 +90,6 @@ begin
 		start_stage <= '0';
 		show_post_x <= 100;
 		show_post_y <= 100;
-		for i in 0 to OBJECT_LIMIT - 1 loop
-		  object_types(i) <= none;
-		end loop;
 		object_types(0) <= tommygun;
 		object_values(0) <= 100;
 		object_counts(0) <= 0;

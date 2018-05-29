@@ -220,40 +220,41 @@ begin
 					enemy_x <= s_x + 16 - object_xs(cnt);
 					enemy_y <= s_y + 40 - object_ys(cnt);
 					isenemyPixel := '1';
-					exit get_obj;
+					enemyOK <= '1';
+					next get_obj;
 				else
 					isenemyPixel := '0';
+					enemyOK <= '1';
 					next get_obj;
 				end if;
-				enemyOK <= '1';
 			when medical=>
 				if(object_xs(cnt) <= s_x + 8 and s_x < object_xs(cnt) + 8 and object_ys(cnt) <= s_y + 8 and s_y < object_ys(cnt) + 8) then
 					medical_x <= s_x + 8 - object_xs(cnt);
 					medical_y <= s_y + 8 - object_ys(cnt);
 					isMedicalPixel := '1';
-					exit get_obj;
+					medicalOK <= '1';
+					next get_obj;
 				else
 					isMedicalPixel := '0';
+					medicalOK <= '1';
 					next get_obj;
 				end if;
-				medicalOK <= '1';
 			when tommygun=>
 				if(object_xs(cnt) <= s_x + 45 and s_x < object_xs(cnt) + 45 and object_ys(cnt) <= s_y + 15 and s_y < object_ys(cnt) + 15) then
 					gun_x <= s_x + 45 - object_xs(cnt);
 					gun_y <= s_y + 15 - object_ys(cnt);
 					isGunPixel := '1';
-					exit get_obj;
+					gunOK <= '1';
+					next get_obj;
 				else
 					isGunPixel := '0';
+					gunOK <= '1';
 					next get_obj;
 				end if;
-				gunOK <= '1';
-			when none => NULL;
+				
+			when none => next get_obj;
 		end case;
 	end loop get_obj;
-	gunOK <= '1';
-	enemyOK <= '1';
-	medicalOK <= '1';
 end process;
 -----------------------------Me--------------------------------------
 process(clk_0)
@@ -320,7 +321,7 @@ begin
 		elsif(isGunPixel = '1' and gunOK = '1')then  --鏋鐭ラ亾鏄剧ず鍑烘潵浠€涔堥鑹
 			q_vga <= "0111100001";
 		elsif(isMedicalPixel = '1' and medicalOK = '1') then  --鍖昏嵂鍖呯櫧鑹
-			q_vga <= "0000111111";
+			q_vga <= "0111000000";
 		elsif(isMePixel = '1' and meOK = '1') then  --鎴戞槸缁胯壊
 			q_vga <= "0000111000";
 		elsif(isenemyPixel = '1' and enemyOK = '1') then  --鏁屼汉榛勮壊
