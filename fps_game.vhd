@@ -14,8 +14,6 @@ entity fps_game is
 	rst: in std_logic;
 	-- Sensor(传入sensor)
 	sensor_input: in std_logic;
-	-- output
-	output: out std_logic;
 	-- VGA(传入color_controller)
 	vga_hs, vga_vs: out std_logic;
 	vga_r, vga_g, vga_b: out std_logic_vector(2 downto 0)

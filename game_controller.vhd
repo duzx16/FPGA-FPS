@@ -52,7 +52,7 @@ signal iter_count: integer range 0 to OBJECT_LIMIT;
 signal bullet_update_count: integer range 0 to 120:=0;
 signal cool_down_count: integer range 0 to 30:=0;
 signal value_changed: std_logic;
-signal add_object_cooldown: integer range 0 to 1000;
+signal add_object_cooldown: integer range 0 to 2000;
 -- 物品状态的一些辅助数据
 type object_count_type is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 150;
 type object_dir_type is array(0 to OBJECT_LIMIT - 1) of std_logic_vector(1 downto 0);
@@ -84,17 +84,30 @@ begin
 		fired_temp <= '0';
 		cool_down_count <= 0;
 		bullet_update_count <= 0;
+		add_object_cooldown <= 0;
 		player_hp <= 100;
 		value_changed <= '0';
 		game_over_stage <= '0';
 		start_stage <= '0';
 		show_post_x <= 100;
 		show_post_y <= 100;
-		object_types(0) <= tommygun;
-		object_values(0) <= 100;
-		object_counts(0) <= 0;
-		object_xs(0) <= 320;
-		object_ys(0) <= 240;
+		
+		for i in 0 to OBJECT_LIMIT - 1 loop
+--			object_types(i) <= enemy;
+--			object_xs(i) <= 64 * i;
+--			object_ys(i) <= 48 * i;
+--			object_values(i) <= 100;
+			object_types(i) <= none;
+		end loop;
+		
+--		object_types(0) <= enemy;
+--		object_values(0) <= 100;
+--		object_xs(0) <= 64;
+--		object_xs(0) <= 48;
+--		object_types(1) <= enemy;
+--		object_values(1) <= 1000;
+--		object_xs(1) <= 320;
+--		object_ys(1) <= 240;
 	elsif rising_edge(clk) then
 		case control_state is
 			when waiting =>
@@ -193,14 +206,14 @@ begin
 					when enemy =>
 						if object_counts(iter_count) = 0 then
 							-- 决定敌人移动的方向
-							if random_vector(0) = '1' and object_xs(iter_count) < X_LIMIT then
+							if random_vector(0) = '1' and object_xs(iter_count) + HENEMY_WIDTH < X_LIMIT then
 								object_dirs(iter_count)(0) <= '1';
-							elsif object_xs(iter_count) > 0 then
+							elsif object_xs(iter_count) > HENEMY_WIDTH then
 								object_dirs(iter_count)(0) <= '0';
 							end if;
-							if random_vector(1) = '1' and object_ys(iter_count) < Y_LIMIT then
+							if random_vector(1) = '1' and object_ys(iter_count) > HENEMY_HEIGHT then
 								object_dirs(iter_count)(1) <= '1';
-							elsif object_ys(iter_count) > 0 then
+							elsif object_ys(iter_count) > HALF_Y_LIMIT then
 								object_dirs(iter_count)(1) <= '0';
 							end if;
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
@@ -208,23 +221,24 @@ begin
 						if object_counts(iter_count) <= 10 then
 							-- 进行敌人的移动
 							if object_dirs(iter_count)(1) = '1' then
-								if object_ys(iter_count) < Y_LIMIT then
+								if object_ys(iter_count) + HENEMY_HEIGHT < Y_LIMIT then
 									object_ys(iter_count) <= object_ys(iter_count) + 1;
 								end if;
 							else
-								if object_ys(iter_count) > 0 then
+								if object_ys(iter_count) > HALF_Y_LIMIT then
 									object_ys(iter_count) <= object_ys(iter_count) - 1;
 								end if;
 							end if;
-							if object_dirs(iter_count)(0) = '0' then
-								if object_xs(iter_count) > X_LIMIT then
+							if object_dirs(iter_count)(0) = '1' then
+								if object_xs(iter_count) + HENEMY_WIDTH < X_LIMIT then
 									object_xs(iter_count) <= object_xs(iter_count) + 1;
 								end if;
 							else
-								if object_xs(iter_count) > 0 then
+								if object_xs(iter_count) > HENEMY_WIDTH then
 									object_xs(iter_count) <= object_xs(iter_count) - 1;
 								end if;
 							end if;
+							object_counts(iter_count) <= object_counts(iter_count) + 1;
 						end if;
 						-- 这里的数值决定了敌方动作的长度
 						if object_counts(iter_count) <= 120 then
@@ -256,6 +270,8 @@ begin
 						-- 物体被选择的时长的判定
 						elsif object_statuses(iter_count) = selected then
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
+						else
+							object_values(iter_count) <= object_values(iter_count) - 1;
 						end if;
 					when tommygun =>
 						-- 物体消失的判定
@@ -264,27 +280,32 @@ begin
 						-- 物体被选择的时长的判定
 						elsif object_statuses(iter_count) = selected then
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
+						else
+							object_values(iter_count) <= object_values(iter_count) - 1;
 						end if;
 					when none =>
 						-- 这里的数值决定了不同的物品被添加的概率
 						if add_object_cooldown = 0 then
 							random_num := CONV_INTEGER(random_vector(15 downto 13));
-							object_xs(iter_count) <= CONV_INTEGER(random_vector(9 downto 0)) MOD X_LIMIT;
-							object_ys(iter_count) <= Y_LIMIT/2;
-							if random_num < 6 then
+							object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
+							object_ys(iter_count) <= Y_LIMIT / 2;
+							if random_num < 5 then
 								-- 添加敌人
 								object_types(iter_count) <= enemy;
 								object_counts(iter_count) <= 30;
-							elsif random_num < 7 then
+								object_values(iter_count) <= 100;
+							elsif random_num < 6 then
 								-- 添加医药包
 								object_types(iter_count) <= medical;
 								object_counts(iter_count) <= 0;
+								object_values(iter_count) <= 1024;
 							else
 								-- 添加冲锋枪
 								object_types(iter_count) <= tommygun;
 								object_counts(iter_count) <= 0;
+								object_values(iter_count) <= 1024;
 							end if;
-							add_object_cooldown <= 1000;
+							add_object_cooldown <= 2000;
 						else
 							add_object_cooldown <= add_object_cooldown - 1;
 						end if;
@@ -297,14 +318,16 @@ begin
 					iter_count <= iter_count + 1;
 				end if;
 			when update_post =>
-				show_post_x <= show_post_x + 1;
-				show_post_y <= show_post_y + 1;
-				if show_post_x = 639 then
-					show_post_x <= 0;
-				end if;
-				if show_post_y = 479 then
-					show_post_y <= 0;
-				end if;
+				show_post_x <= post_x;
+				show_post_y <= post_y;
+--				show_post_x <= show_post_x + 1;
+--				show_post_y <= show_post_y + 1;
+--				if show_post_x = 639 then
+--					show_post_x <= 0;
+--				end if;
+--				if show_post_y = 479 then
+--					show_post_y <= 0;
+--				end if;
 				if bullet_update_count > 0 then
 					bullet_update_count <= bullet_update_count - 1;
 				end if;

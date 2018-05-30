@@ -128,18 +128,15 @@ begin
 -----------------------------Boarder---------------------------------
 process(clk_0)
 begin
-	boarderOK <= '0';
 	if(s_x = 0 or s_y = 0 or s_x = 638 or s_y = 479) then
 		isboarderPixel := '1';
 	else
 		isboarderPixel := '0';
 	end if;
-	boarderOK <= '1';
 end process;
 -------------------------------HP------------------------------------
 process(clk_0)
 begin
-	HpOK <= '0';
 	if(s_x >= hpStart_x and s_x <= hpEnd_x and s_y >= hpStart_y and s_y <= hpEnd_y) then
 		if((s_x - hpStart_x) <= (my_hp *(1/5*1024)/1024)) then
 			isHpPixel := '1';
@@ -147,12 +144,10 @@ begin
 	else
 		isHpPixel := '0';
 	end if;
-	HpOK <= '1';
 end process;
 ----------------------------bulletNUM--------------------------------
 process(clk_0)
 begin
-	bulletnumOK <= '0';
 	if(s_x >= BullnumStart_x and s_x <= BullnumEnd_x and s_y >= BullnumStart_y and s_y <= BullnumEnd_y) then
 		if((s_x - BullnumStart_x) <= (bullet_num *(1/5*1024)/1024)) then
 			isBulletNumPixel := '1';
@@ -160,18 +155,15 @@ begin
 	else
 		isBulletNumPixel := '0';
 	end if;
-	bulletnumOK <= '1';
 end process;
 ------------------------------POST-----------------------------------
 process(clk_0)
 begin
-	postOK <= '0';
 	if(postX <= s_x + 3 and s_x <= postX + 3 and postY <= s_y + 3 and s_y <= postY + 3) then
 		isPostPixel := '1';
 	else
 		isPostPixel := '0';
 	end if;
-	postOK <= '1';
 end process;
 
 ----------------------------tommygun---------------------------------
@@ -216,42 +208,26 @@ begin
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		case object_types(cnt) is
 			when enemy =>
-				if(object_xs(cnt) <= s_x + 16 and s_x < object_xs(cnt) + 16 and object_ys(cnt) <= s_y + 40 and s_y < object_ys(cnt) + 40) then
-					enemy_x <= s_x + 16 - object_xs(cnt);
-					enemy_y <= s_y + 40 - object_ys(cnt);
-					isenemyPixel := '1';
+				if(object_xs(cnt) <= s_x + HENEMY_WIDTH and s_x < object_xs(cnt) + HENEMY_WIDTH and object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT) then
+					enemy_x <= s_x + HENEMY_WIDTH - object_xs(cnt);
+					enemy_y <= s_y + HENEMY_HEIGHT - object_ys(cnt);
 					enemyOK <= '1';
-					next get_obj;
-				else
-					isenemyPixel := '0';
-					enemyOK <= '1';
-					next get_obj;
+					exit get_obj;
 				end if;
 			when medical=>
-				if(object_xs(cnt) <= s_x + 8 and s_x < object_xs(cnt) + 8 and object_ys(cnt) <= s_y + 8 and s_y < object_ys(cnt) + 8) then
-					medical_x <= s_x + 8 - object_xs(cnt);
-					medical_y <= s_y + 8 - object_ys(cnt);
-					isMedicalPixel := '1';
+				if(object_xs(cnt) <= s_x + HMEDICAL_WIDTH and s_x < object_xs(cnt) + HMEDICAL_WIDTH and object_ys(cnt) <= s_y + HMEDICAL_HEIGHT and s_y < object_ys(cnt) + HMEDICAL_HEIGHT) then
+					medical_x <= s_x + HMEDICAL_WIDTH - object_xs(cnt);
+					medical_y <= s_y + HMEDICAL_HEIGHT - object_ys(cnt);
 					medicalOK <= '1';
-					next get_obj;
-				else
-					isMedicalPixel := '0';
-					medicalOK <= '1';
-					next get_obj;
+					exit get_obj;
 				end if;
 			when tommygun=>
-				if(object_xs(cnt) <= s_x + 45 and s_x < object_xs(cnt) + 45 and object_ys(cnt) <= s_y + 15 and s_y < object_ys(cnt) + 15) then
-					gun_x <= s_x + 45 - object_xs(cnt);
-					gun_y <= s_y + 15 - object_ys(cnt);
-					isGunPixel := '1';
+				if(object_xs(cnt) <= s_x + HGUN_WIDTH and s_x < object_xs(cnt) + HGUN_WIDTH and object_ys(cnt) <= s_y + HGUN_HEIGHT and s_y < object_ys(cnt) + HGUN_HEIGHT) then
+					gun_x <= s_x + HGUN_WIDTH - object_xs(cnt);
+					gun_y <= s_y + HGUN_HEIGHT - object_ys(cnt);
 					gunOK <= '1';
-					next get_obj;
-				else
-					isGunPixel := '0';
-					gunOK <= '1';
-					next get_obj;
+					exit get_obj;
 				end if;
-				
 			when none => next get_obj;
 		end case;
 	end loop get_obj;
@@ -259,13 +235,11 @@ end process;
 -----------------------------Me--------------------------------------
 process(clk_0)
 begin
-	meOK <= '0';
 	if(s_x >= MeStartX and s_x <= MeEndX and s_y >= MeStartY and s_y <= MeEndY) then
 		isMePixel := '1';
 	else
 		isMePixel := '0';
 	end if;
-	meOK <= '1';
 end process;
 ---------------------------Gameover-----------------------------------
 process(clk_0)
@@ -291,7 +265,7 @@ end process;
 ----------------------Connect2VGA640480------------------------------
 process(clk_0)
 begin
-	if(isBoarderPixel = '1' and boarderOK = '1') then
+	if(isBoarderPixel = '1') then
 		q_vga <= "0111111111";
 	end if;
 	
@@ -311,20 +285,20 @@ begin
 			q_vga <= "0000001001";
 		end if;
 	else
-		if(isHpPixel = '1' and hpOK = '1') then   --琛€閲忕孩鑹
+		if(isHpPixel = '1') then   --琛€閲忕孩鑹
 			q_vga <= "0111000000";
 		---------elsif() then----------------------
-		elsif(isBulletNumPixel = '1' and bulletnumOK = '1') then  --瀛愬脊鏁伴噺钃濊壊
+		elsif(isBulletNumPixel = '1') then  --瀛愬脊鏁伴噺钃濊壊
 			q_vga <= "0000000111";
-		elsif(isPostPixel = '1' and postOK = '1') then  --鍑嗘槦鐧借壊
+		elsif(isPostPixel = '1') then  --鍑嗘槦鐧借壊
 			q_vga <= "0000000000";
-		elsif(isGunPixel = '1' and gunOK = '1')then  --鏋鐭ラ亾鏄剧ず鍑烘潵浠€涔堥鑹
+		elsif(gunOK = '1')then  --鏋鐭ラ亾鏄剧ず鍑烘潵浠€涔堥鑹
 			q_vga <= "0111100001";
-		elsif(isMedicalPixel = '1' and medicalOK = '1') then  --鍖昏嵂鍖呯櫧鑹
+		elsif(medicalOK = '1') then  --鍖昏嵂鍖呯櫧鑹
 			q_vga <= "0111000000";
-		elsif(isMePixel = '1' and meOK = '1') then  --鎴戞槸缁胯壊
+		elsif(isMePixel = '1') then  --鎴戞槸缁胯壊
 			q_vga <= "0000111000";
-		elsif(isenemyPixel = '1' and enemyOK = '1') then  --鏁屼汉榛勮壊
+		elsif(enemyOK = '1') then  --鏁屼汉榛勮壊
 			q_vga <= "0111111000";
 		else
 			q_vga <= "0111111111";
