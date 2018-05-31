@@ -49,7 +49,7 @@ end component;
 type control_state_type is (waiting, post_iter, post_act, object_iter, update_post);
 signal control_state:control_state_type;
 signal iter_count: integer range 0 to OBJECT_LIMIT;
-signal bullet_update_count: integer range 0 to 120:=0;
+signal bullet_update_count: integer range 0 to 180:=0;
 signal cool_down_count: integer range 0 to 30:=0;
 signal value_changed: std_logic;
 signal add_object_cooldown: integer range 0 to 2000;
@@ -93,26 +93,13 @@ begin
 		show_post_y <= 100;
 		
 		for i in 0 to OBJECT_LIMIT - 1 loop
---			object_types(i) <= enemy;
---			object_xs(i) <= 64 * i;
---			object_ys(i) <= 48 * i;
---			object_values(i) <= 100;
 			object_types(i) <= none;
 		end loop;
-		
---		object_types(0) <= enemy;
---		object_values(0) <= 100;
---		object_xs(0) <= 64;
---		object_xs(0) <= 48;
---		object_types(1) <= enemy;
---		object_values(1) <= 1000;
---		object_xs(1) <= 320;
---		object_ys(1) <= 240;
 	elsif rising_edge(clk) then
 		case control_state is
 			when waiting =>
 				-- 检测是否开火
-				if open_fire = '1' then
+				if open_fire = '0' then
 					fired_temp <= '1';
 				end if;
 				if data_safe = '1' then
@@ -122,6 +109,7 @@ begin
 							if fired_temp = '1' and bullet_update_count = 0 then
 								cool_down_count <= 30;
 								show_fired <= '1';
+								bullet_num <= bullet_num - 1;
 								control_state <= post_iter;
 								iter_count <= 0;
 							else
@@ -131,7 +119,7 @@ begin
 						else
 							control_state <= object_iter;
 							iter_count <= 0;
-							if cool_down_count > 20 then
+							if cool_down_count < 20 then
 								show_fired <= '0';
 							end if;
 							cool_down_count <= cool_down_count - 1;
@@ -146,15 +134,15 @@ begin
 				-- 这里的数值决定了物品包围盒的大小
 				case object_types(iter_count) is
 					when enemy =>
-						if abs(show_post_x - object_xs(iter_count)) < 10 and abs(show_post_y - object_ys(iter_count)) < 10 then
+						if abs(show_post_x - object_xs(iter_count)) < HENEMY_WIDTH and abs(show_post_y - object_ys(iter_count)) < HENEMY_HEIGHT then
 								post_selected <= iter_count;
 						end if;
 					when medical =>
-						if abs(show_post_x - object_xs(iter_count)) < 10 and abs(show_post_y - object_ys(iter_count)) < 10 then
+						if abs(show_post_x - object_xs(iter_count)) < HMEDICAL_WIDTH and abs(show_post_y - object_ys(iter_count)) < HMEDICAL_HEIGHT then
 								post_selected <= iter_count;
 						end if;
 					when tommygun =>
-						if abs(show_post_x - object_xs(iter_count)) < 10 and abs(show_post_y - object_ys(iter_count)) < 10 then
+						if abs(show_post_x - object_xs(iter_count)) < HGUN_WIDTH and abs(show_post_y - object_ys(iter_count)) < HGUN_HEIGHT then
 								post_selected <= iter_count;
 						end if;
 					when none =>
@@ -175,7 +163,7 @@ begin
 							-- 从130开始进入被攻击画面
 							object_counts(iter_count) <= 130;
 							-- 对敌人进行减血
-							if object_values(iter_count) < 40 then
+							if object_values(iter_count) < 110 then
 								object_types(iter_count) <= none;
 							else
 								object_values(iter_count) <= object_values(iter_count) - 40;
@@ -217,8 +205,7 @@ begin
 								object_dirs(iter_count)(1) <= '0';
 							end if;
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
-						end if;
-						if object_counts(iter_count) <= 10 then
+						elsif object_counts(iter_count) <= 10 then
 							-- 进行敌人的移动
 							if object_dirs(iter_count)(1) = '1' then
 								if object_ys(iter_count) + HENEMY_HEIGHT < Y_LIMIT then
@@ -288,7 +275,7 @@ begin
 						if add_object_cooldown = 0 then
 							random_num := CONV_INTEGER(random_vector(15 downto 13));
 							object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
-							object_ys(iter_count) <= Y_LIMIT / 2;
+							object_ys(iter_count) <= HALF_Y_LIMIT;
 							if random_num < 5 then
 								-- 添加敌人
 								object_types(iter_count) <= enemy;
@@ -328,6 +315,9 @@ begin
 --				if show_post_y = 479 then
 --					show_post_y <= 0;
 --				end if;
+				if bullet_num = 0 then
+					bullet_update_count <= 180;
+				end if;
 				if bullet_update_count > 0 then
 					bullet_update_count <= bullet_update_count - 1;
 				end if;

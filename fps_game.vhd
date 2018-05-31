@@ -8,12 +8,21 @@ use my_lib.data_type.all;
 
 entity fps_game is
 	port(
+	-- LED OUTPUT
+	led_x1: out std_logic_vector(6 downto 0);
+	led_y1: out std_logic_vector(6 downto 0);
+	led_z1: out std_logic_vector(6 downto 0);
+	led_x0: out std_logic_vector(6 downto 0);
+	led_y0: out std_logic_vector(6 downto 0);
+	led_z0: out std_logic_vector(6 downto 0);
 	-- Clock Input
 	clk: in std_logic; -- 100M时钟
 	-- Rest
 	rst: in std_logic;
 	-- Sensor(传入sensor)
 	sensor_input: in std_logic;
+	-- FOR OPEN FILE
+	open_fire: in std_logic;
 	-- VGA(传入color_controller)
 	vga_hs, vga_vs: out std_logic;
 	vga_r, vga_g, vga_b: out std_logic_vector(2 downto 0)
@@ -27,7 +36,13 @@ port(
 	uart_rx: in std_logic;  -- 串口读取
 	-- 返回准星的位置
 	post_x: out integer range 0 to X_LIMIT;
-	post_y: out integer range 0 to Y_LIMIT
+	post_y: out integer range 0 to Y_LIMIT;
+	led_x1: out std_logic_vector(6 downto 0);
+	led_y1: out std_logic_vector(6 downto 0);
+	led_z1: out std_logic_vector(6 downto 0);
+	led_x0: out std_logic_vector(6 downto 0);
+	led_y0: out std_logic_vector(6 downto 0);
+	led_z0: out std_logic_vector(6 downto 0)
 );
 end component;
 component game_controller is
@@ -115,7 +130,6 @@ component SixtyHzSignalGenerator is
 	);
 end component;
 
-signal open_fire:std_logic;
 -- 显示器显示的准星的位置
 signal show_post_x: integer range 0 to X_LIMIT;
 signal show_post_y: integer range 0 to Y_LIMIT;
@@ -145,7 +159,13 @@ begin
 		clk => clk,
 		uart_rx => sensor_input,
 		post_x => post_x,
-		post_y => post_y
+		post_y => post_y,
+		led_x1 => led_x1,
+		led_y1 => led_y1,
+		led_z1 => led_z1,
+		led_x0 => led_x0,
+		led_y0 => led_y0,
+		led_z0 => led_z0
 	);
 	controller: game_controller port map(
 		rst => rst,
@@ -175,7 +195,7 @@ begin
 		);
 	u1:color_controller port map(
 		clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, player_hp, bullet_num
-		,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), open_fire, data_safe
+		,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired, data_safe
 	);
 	
 	u2:SixtyHzSignalGenerator port map(

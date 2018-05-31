@@ -10,10 +10,15 @@ entity sensor is
 port(
 	rst, clk: in std_logic;
 	uart_rx: in std_logic;  -- 串口读取
-	--uart_tx: out std_logic; -- 串口写入
 	-- 返回准星的位置
 	post_x: out integer range 0 to X_LIMIT;
-	post_y: out integer range 0 to Y_LIMIT
+	post_y: out integer range 0 to Y_LIMIT;
+	led_x1: out std_logic_vector(6 downto 0);
+	led_y1: out std_logic_vector(6 downto 0);
+	led_z1: out std_logic_vector(6 downto 0);
+	led_x0: out std_logic_vector(6 downto 0);
+	led_y0: out std_logic_vector(6 downto 0);
+	led_z0: out std_logic_vector(6 downto 0)
 );
 end entity;
 
@@ -28,6 +33,12 @@ port(
 	uart_clk: buffer std_logic --按照串口波特率分频后的时钟
 );
 end component;
+component led_converter is
+port(
+	num: in std_logic_vector(3 downto 0);
+	led_display: out std_logic_vector(6 downto 0)
+);
+end component;
 type recv_state is (head, type_data, value_data, check_sum);
 signal current_state: recv_state;
 signal pointer: integer range 0 to 8;
@@ -37,6 +48,7 @@ signal data_valid: std_logic;
 signal data_byte: std_logic_vector(7 downto 0);
 signal data_buffer: std_logic_vector(71 downto 0);
 signal angx, angy, angz: integer range -180 to 180;
+signal vx1, vy1, vz1, vx0, vy0, vz0: std_logic_vector(3 downto 0);
 begin
 	sensor_uart: uart port map(
 	clk => clk,
@@ -46,12 +58,36 @@ begin
 	data => uart_data,
 	uart_clk => uart_clk
 	);
+	converter_x1: led_converter port map(
+	num => vx1,
+	led_display => led_x1
+	);
+	converter_y1: led_converter port map(
+	num => vy1,
+	led_display => led_y1
+	);
+	converter_z1: led_converter port map(
+	num => vz1,
+	led_display => led_z1
+	);
+	converter_x0: led_converter port map(
+	num => vx0,
+	led_display => led_x0
+	);
+	converter_y0: led_converter port map(
+	num => vy0,
+	led_display => led_y0
+	);
+	converter_z0: led_converter port map(
+	num => vz0,
+	led_display => led_z0
+	);
 	process(rst, uart_clk)
 	begin
 		if rst = '0' then
 			current_state <= head;
 			pointer <= 0;
-		elsif rising_edge(data_valid) then
+		elsif rising_edge(uart_clk) then
 			if data_valid = '1' then
 				case current_state is
 					when head =>
@@ -60,7 +96,7 @@ begin
 							pointer <= 0;
 						end if;
 					when type_data =>
-						if uart_data = x"53" or uart_data = x"51" then
+						if uart_data = x"53" then
 							current_state <= value_data;
 							data_buffer(7 downto 0) <= uart_data;
 							pointer <= 1;
@@ -87,6 +123,7 @@ begin
 			end if;
 		end if;
 	end process;
+	
 	process(angx, angy, angz)
 	variable temp_x, temp_y: integer;
 	begin
@@ -102,5 +139,14 @@ begin
 		else
 			post_y <= temp_y;
 		end if;
+	end process;
+	process(angx, angy, angz)
+	begin
+		vx0 <= conv_std_logic_vector((angx + 180) / 40, 4);
+		vy0 <= conv_std_logic_vector((angy + 180) / 40, 4);
+		vz0 <= conv_std_logic_vector((angz + 180) / 40, 4);
+		vx1 <= conv_std_logic_vector((angx + 180) / 4 MOD 10, 4);
+		vy1 <= conv_std_logic_vector((angy + 180) / 4 MOD 10, 4);
+		vz1 <= conv_std_logic_vector((angz + 180) / 4 MOD 10, 4);
 	end process;
 end architecture; 
