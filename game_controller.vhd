@@ -47,12 +47,18 @@ port(
 end component;
 -- 游戏的状态控制
 type control_state_type is (waiting, post_iter, post_act, object_iter, update_post);
+
+constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 2000;
+constant COOL_DOWN_LIMIT: integer:= 30;
+constant BULLET_UPDATE_LIMIT: integer:= 180;
+
+
 signal control_state:control_state_type;
 signal iter_count: integer range 0 to OBJECT_LIMIT;
-signal bullet_update_count: integer range 0 to 180:=0;
-signal cool_down_count: integer range 0 to 30:=0;
+signal bullet_update_count: integer range 0 to BULLET_UPDATE_LIMIT:=0;
+signal cool_down_count: integer range 0 to COOL_DOWN_LIMIT:=0;
 signal value_changed: std_logic;
-signal add_object_cooldown: integer range 0 to 2000;
+signal add_object_cooldown: integer range 0 to ADD_OBJECT_COOLDOWN_LIMIT;
 -- 物品状态的一些辅助数据
 type object_count_type is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 150;
 type object_dir_type is array(0 to OBJECT_LIMIT - 1) of std_logic_vector(1 downto 0);
@@ -86,15 +92,29 @@ begin
 		bullet_update_count <= 0;
 		add_object_cooldown <= 0;
 		player_hp <= 100;
+		bullet_num <= BULLET_NUM_LIMIT;
 		value_changed <= '0';
 		game_over_stage <= '0';
 		start_stage <= '0';
 		show_post_x <= 100;
 		show_post_y <= 100;
+		continuous_shoot <= '0';
 		
 		for i in 0 to OBJECT_LIMIT - 1 loop
 			object_types(i) <= none;
 		end loop;
+--		object_types(0) <= enemy;
+--		object_xs(0) <= 320;
+--		object_ys(0) <= 240;
+--		object_values(0) <= 100;
+--		object_counts(0) <= 0;
+--		object_statuses(0) <= normal;
+--		object_types(1) <= enemy;
+--		object_xs(1) <= 220;
+--		object_ys(1) <= 240;
+--		object_values(1) <= 100;
+--		object_counts(1) <= 0;
+--		object_statuses(1) <= normal;
 	elsif rising_edge(clk) then
 		case control_state is
 			when waiting =>
@@ -106,8 +126,12 @@ begin
 					if value_changed = '0' then
 						post_selected <= OBJECT_LIMIT;
 						if cool_down_count = 0 then
-							if fired_temp = '1' and bullet_update_count = 0 then
-								cool_down_count <= 30;
+							if fired_temp = '1' and bullet_num > 0 then
+								if continuous_shoot = '1' then
+									cool_down_count <= 8;
+								else
+									cool_down_count <= COOL_DOWN_LIMIT;
+								end if;
 								show_fired <= '1';
 								bullet_num <= bullet_num - 1;
 								control_state <= post_iter;
@@ -157,20 +181,20 @@ begin
 			when post_act =>
 				-- 对准星攻击的目标进行攻击或者拾取
 				if post_selected < OBJECT_LIMIT then
-					case object_types(iter_count) is
+					case object_types(post_selected) is
 						when enemy =>
-							object_statuses(iter_count) <= selected;
+							object_statuses(post_selected) <= selected;
 							-- 从130开始进入被攻击画面
-							object_counts(iter_count) <= 130;
+							object_counts(post_selected) <= 130;
 							-- 对敌人进行减血
-							if object_values(iter_count) < 110 then
-								object_types(iter_count) <= none;
+							if object_values(post_selected) < 110 then
+								object_types(post_selected) <= none;
 							else
-								object_values(iter_count) <= object_values(iter_count) - 40;
+								object_values(post_selected) <= object_values(post_selected) - 40;
 							end if;
 						when medical =>
-							object_statuses(iter_count) <= selected;
-							object_counts(iter_count) <= 0;
+							object_statuses(post_selected) <= selected;
+							object_counts(post_selected) <= 0;
 							-- 对玩家进行加血
 							if player_hp > 60 then
 								player_hp <= 100;
@@ -178,8 +202,8 @@ begin
 								player_hp <= player_hp + 40;
 							end if;
 						when tommygun =>
-							object_statuses(iter_count) <= selected;
-							object_counts(iter_count) <= 0;
+							object_statuses(post_selected) <= selected;
+							object_counts(post_selected) <= 0;
 							-- 获得冲锋枪效果
 							continuous_shoot <= '1';
 						when others =>
@@ -262,7 +286,7 @@ begin
 						end if;
 					when tommygun =>
 						-- 物体消失的判定
-						if object_values(iter_count) = 0 or object_counts(iter_count) = 10 then
+						if object_values(iter_count) = 0 or object_counts(iter_count) = 30 then
 							object_types(iter_count) <= none;
 						-- 物体被选择的时长的判定
 						elsif object_statuses(iter_count) = selected then
@@ -276,10 +300,11 @@ begin
 							random_num := CONV_INTEGER(random_vector(15 downto 13));
 							object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
 							object_ys(iter_count) <= HALF_Y_LIMIT;
+							object_statuses(iter_count) <= normal;
 							if random_num < 5 then
 								-- 添加敌人
 								object_types(iter_count) <= enemy;
-								object_counts(iter_count) <= 30;
+								object_counts(iter_count) <= 0;
 								object_values(iter_count) <= 100;
 							elsif random_num < 6 then
 								-- 添加医药包
@@ -292,7 +317,7 @@ begin
 								object_counts(iter_count) <= 0;
 								object_values(iter_count) <= 1024;
 							end if;
-							add_object_cooldown <= 2000;
+							add_object_cooldown <= ADD_OBJECT_COOLDOWN_LIMIT;
 						else
 							add_object_cooldown <= add_object_cooldown - 1;
 						end if;
@@ -316,10 +341,15 @@ begin
 --					show_post_y <= 0;
 --				end if;
 				if bullet_num = 0 then
-					bullet_update_count <= 180;
+					bullet_update_count <= 1;
 				end if;
 				if bullet_update_count > 0 then
-					bullet_update_count <= bullet_update_count - 1;
+					if bullet_update_count = BULLET_UPDATE_LIMIT then
+						bullet_update_count <= 0;
+						bullet_num <= BULLET_NUM_LIMIT;
+					else
+						bullet_update_count <= bullet_update_count + 1;
+					end if;
 				end if;
 				value_changed <= '1';
 				control_state <= waiting;

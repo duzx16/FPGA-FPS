@@ -9,7 +9,7 @@ package data_type is
 	constant Y_LIMIT: integer := 480;
 	constant OBJECT_LIMIT: integer := 10;
 	constant PLAYER_HP_LIMIT: integer := 100;
-	constant BULLET_NUM_LIMIT: integer := 100;
+	constant BULLET_NUM_LIMIT: integer := 20;
 	constant HENEMY_WIDTH: integer:= 16;
 	constant HENEMY_HEIGHT: integer:=40;
 	constant HMEDICAL_WIDTH: integer:=8;

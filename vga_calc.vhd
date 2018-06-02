@@ -138,8 +138,10 @@ end process;
 process(clk_0)
 begin
 	if(s_x >= hpStart_x and s_x <= hpEnd_x and s_y >= hpStart_y and s_y <= hpEnd_y) then
-		if((s_x - hpStart_x) <= (my_hp *(1/5*1024)/1024)) then
+		if(CONV_INTEGER(s_x - hpStart_x) * PLAYER_HP_LIMIT <= my_hp * 20) then
 			isHpPixel := '1';
+		else
+			isHpPixel := '0';
 		end if;
 	else
 		isHpPixel := '0';
@@ -149,8 +151,10 @@ end process;
 process(clk_0)
 begin
 	if(s_x >= BullnumStart_x and s_x <= BullnumEnd_x and s_y >= BullnumStart_y and s_y <= BullnumEnd_y) then
-		if((s_x - BullnumStart_x) <= (bullet_num *(1/5*1024)/1024)) then
+		if(CONV_INTEGER(s_x - BullnumStart_x) * BULLET_NUM_LIMIT <= bullet_num * 20) then
 			isBulletNumPixel := '1';
+		else
+			isBulletNumPixel := '0';
 		end if;
 	else
 		isBulletNumPixel := '0';

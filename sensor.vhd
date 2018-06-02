@@ -86,6 +86,9 @@ begin
 	begin
 		if rst = '0' then
 			current_state <= head;
+			angx <= 0;
+			angy <= 0;
+			angz <= 0;
 			pointer <= 0;
 		elsif rising_edge(uart_clk) then
 			if data_valid = '1' then
