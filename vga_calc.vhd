@@ -6,9 +6,6 @@ use ieee.std_logic_arith.all;
 library my_lib;
 use my_lib.data_type.all;
 
---constant enemy_NUM : integer := 10;
---type enemy_type_matrix is array(enemy_NUM downto 0) of std_logic_vector(1 downto 0);
-
 entity vga_calc is
 	port(
 		--sys
@@ -24,31 +21,21 @@ entity vga_calc is
 		--POST
 		postX:in std_logic_vector(9 downto 0);
 		postY:in std_logic_vector(8 downto 0);
-		post_select:in std_logic;  --鍑嗘槦閫変腑锛屽紑鐏垨鑰呴€夌墿鍝
+		post_select:in std_logic;  --开火与选取物品
 		
-		--ME
-		--meX:in std_logic_vector(9 downto 0);
-		--meY:in std_logic_vector(8 downto 0);
+		--hp and bullet and fire
 		my_hp :in integer range 0 to 100;
 		bullet_num:in integer range 0 to 100;
 		me_firing:in std_logic;
 		
-		--enemy
-		--enemy_X: in std_logic_vector(9 downto 0);
-		--enemy_Y : in std_logic_vector(8 downto 0);
-		--enemy_type: in enemy_type_matrix; --寰呭畾
-		--enemy_firing:in std_logic;
-		
-		--objs
-		--medical_X:in std_logic_vector(9 downto 0);
-		--medical_Y:in std_logic_vector(8 downto 0);
-		--tommygun_X:in std_logic_vector(9 downto 0);
-		--tommygun_Y:in std_logic_vector(8 downto 0);
-		--object_statuses: in object_status_array;
 		object_types: in object_type_array;
       object_xs: in object_x_array;
       object_ys: in object_y_array;
       object_statuses: in object_status_array;
+		
+		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
+		base_sram_addr : out std_logic_vector(19 downto 0);
+		base_sram_data : inout std_logic_vector(31 downto 0);
 		
 		data_safe:out std_logic
 	);
@@ -58,8 +45,8 @@ architecture bhv of vga_calc is
 	component vga640480 is
 		port(
 			reset       :         in  STD_LOGIC;
-			clk_0       :         in  STD_LOGIC; --100M鏃堕挓杈撳叆
-			hs,vs       :         out STD_LOGIC; --琛屽悓姝ャ€佸満鍚屾淇″彿
+			clk_0       :         in  STD_LOGIC; --100M时钟
+			hs,vs       :         out STD_LOGIC; --行同步信号场同步信号
 			vector_x_out   :   out std_LOGIC_VECTOR(9 downto 0);
 			vector_y_out :     out std_LOGIC_vector(8 downto 0);
 			clk50 : out std_logic;
@@ -69,20 +56,23 @@ architecture bhv of vga_calc is
 		);
 	end component;
 	
-	--component digital_rom is
-		--port(
-		--	address:in std_logic_vector(15 downto 0);
-			--clock:in std_logic;
---			q:out std_logic_vector(9 downto 0)
-	--	);
-	--end component;
+	component sram_controller is
+		port(
+			clk_0 : in std_logic;  --25M
+			rwselect : in std_logic;   --read for '0'
+			addr: in std_logic_vector(19 downto 0);
+			base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
+			base_sram_addr:out std_logic_vector(19 downto 0);
+			base_sram_data:inout std_logic_vector(31 downto 0);
+			data_read:out std_logic_vector(31 downto 0);
+			data_wrote:in std_logic_vector(31 downto 0)
+		);
+	end component;
 	
 	signal s_x:std_logic_vector(9 downto 0);
 	signal s_y:std_logic_vector(8 downto 0);
 	signal clk50:std_logic;
 	signal q_vga:std_LOGIC_vector(9 downto 0);
-	signal address_tmp16:std_LOGIC_vector(15 downto 0);
-	signal q_tmp10:std_logic_vector(9 downto 0);
 	
 	constant hpStart_x:std_LOGIC_vector(9 downto 0) := "1001011000";
 	constant hpEnd_x:std_LOGIC_vector(9 downto 0) := "1001101100";
@@ -100,14 +90,28 @@ architecture bhv of vga_calc is
 	constant MeEndY : std_logic_vector(8 downto 0):="111011111";
 	
 	shared variable isBoarderPixel, isPostPixel ,isHpPixel, isGunPixel, isMedicalPixel,
-						 isMePixel, isBulletNumPixel, isenemyPixel, isGameStartPixel, isGameOverPixel:std_logic;
+						 isMePixel, isBulletNumPixel, isenemyPixel, isGameStartPixel, isGameOverPixel,
+						 isBackgroundPixel:std_logic;
 	
-	signal boarderOK, postOK, HpOK, gunOK, medicalOK, meOK, bulletnumOK, enemyOK, gamestartOK, gameoverOK:std_logic;
+	signal boarderOK, postOK, HpOK, gunOK, medicalOK, meOK, bulletnumOK, enemyOK, gamestartOK, 
+				gameoverOK, backgroundOK:std_logic;
+				
 	signal enemy_x, medical_x, gun_x:std_logic_vector(9 downto 0);
 	signal enemy_y, medical_y, gun_y:std_logic_vector(8 downto 0);
 	
 	shared variable cnt: integer := 0;
+	
+	signal rwselect:std_logic;
+	signal addr_cnt:std_logic_vector(19 downto 0);
+	signal data_read, data_wrote : std_logic_vector(31 downto 0);
+	
+	signal q_background_calc:std_logic_vector(9 downto 0);
+	signal background_addr:std_logic_vector(19 downto 0):= (others=>'0');
+	signal clk25:std_logic;
 begin
+	
+	rwselect <= '0';
+	
 	u1:vga640480 port map(
 									reset=>reset,
 									clk_0=>clk_0,
@@ -119,12 +123,19 @@ begin
 									q=>q_vga,
 									r=>r,g=>g,b=>b
 								);
-	--u2:digital_rom port map(
-		--							address=>address_tmp16,
-			--						clock=>clk50,
-				--					q=>q_tmp10
-					--			);
-				
+	u2:sram_controller port map
+								(
+									clk_0=> clk50,
+									rwselect=> rwselect,
+									addr=> addr_cnt,
+									base_sram_we=> base_sram_we,
+									base_sram_oe=> base_sram_oe,
+									base_sram_ce=> base_sram_ce,
+									base_sram_addr=> base_sram_addr,
+									base_sram_data=> base_sram_data,
+									data_read=> data_read,
+									data_wrote=> data_wrote
+								);
 -----------------------------Boarder---------------------------------
 process(clk_0)
 begin
@@ -170,40 +181,7 @@ begin
 	end if;
 end process;
 
-----------------------------tommygun---------------------------------
---process(clk_0)
---begin
-	--gunOK <= '0';
-		--if(tommygun_X <= s_x + 3 and s_x <= tommygun_X + 3 and tommygun_Y <= s_y + 3 and s_y <= tommygun_Y + 3) then
-			--isGunPixel <= '1';
---		else
-	--		isGunPixel <= '0';
-		--end if;
---	gunOK <= '1';
---end process;
-
----------------------------Medical-----------------------------------
---process(clk_0)
---begin
-	--medicalOK <= '0';
-		--if(medical_X <= s_x + 3 and s_x <= medical_X + 3 and medical_Y <= s_y + 3 and s_y <= medical_Y + 3) then
-			--isMedicalPixel <= '1';
---		else
-	--		isMedicalPixel <= '0';
-		--end if;
---	medicalOK <= '1';
---end process;
----------------------------enemy------------------------------------
---process(clk_0)
---begin
-	--enemyOK <= '0';
-	--if(enemy_X <= s_x + 3 and s_x <= enemy_X + 3 and enemy_Y <= s_y + 3 and s_y <= enemy_Y + 3) then
-		--isenemyPixel <= '1';
---	else
-	--	isenemyPixel <= '0';
- 	--end if;
-	  --enemyOK <= '1';
---end process;
+-----------------------gun & medical & enemy-------------------------
 process(clk_0)
 begin
 	gunOK <= '0';
@@ -264,7 +242,32 @@ begin
 	end if;
 end process;
 ----------------------------------------------------------------------
-
+--++++++++++++++++++++++++  SRAM DATA ++++++++++++++++++++++++++++++++
+process(clk50, addr_cnt, reset)
+begin
+	----------------------- background --------------------------
+	backgroundOK <= '0';
+	if clk50'event and clk50 = '1' then
+		if s_x < 640 and s_y < 480 then			
+			background_addr <= CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20);
+			addr_cnt <= background_addr;
+			if background_addr(0) = '0' then
+				q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+			else
+				q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+			end if;
+			if(q_background_calc = 0) then
+				isBackgroundPixel := '0';
+			else
+				isBackgroundPixel := '1';
+			end if;
+		end if;
+	end if;
+	backgroundOK <= '1';
+	
+	-------------------------------------------------------------
+end process;
+--+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 ----------------------Connect2VGA640480------------------------------
 process(clk_0)
@@ -272,16 +275,17 @@ begin
 	if(isBoarderPixel = '1') then
 		q_vga <= "0111111111";
 	end if;
-	
 	-------------------TODO-----------------------
-	-----------娓告垙寮€濮嬫槸榛勮壊鐣岄潰------------
+	if(isBackgroundPixel = '1' and backgroundOK = '1') then
+		q_vga <= q_background_calc;
+	end if;
+	
 	if(gamestart = '1') then                           
 		if(isGameStartPixel = '1') then
 			q_vga <= "0111111000";
 		else
 			q_vga <= "0000001001";
 		end if;
-	-----------娓告垙寮€濮嬫槸绾㈣壊鐣岄潰------------
 	elsif(gameover = '1') then
 		if isGameOverPixel <= '1' then
 			q_vga <= "0111000000";
@@ -289,23 +293,22 @@ begin
 			q_vga <= "0000001001";
 		end if;
 	else
-		if(isHpPixel = '1') then   --琛€閲忕孩鑹
+		if(isHpPixel = '1') then   --血量红色
 			q_vga <= "0111000000";
-		---------elsif() then----------------------
-		elsif(isBulletNumPixel = '1') then  --瀛愬脊鏁伴噺钃濊壊
+		elsif(isBulletNumPixel = '1') then  --子弹量蓝色
 			q_vga <= "0000000111";
-		elsif(isPostPixel = '1') then  --鍑嗘槦鐧借壊
+		elsif(isPostPixel = '1') then  --准星黑色
 			q_vga <= "0000000000";
-		elsif(gunOK = '1')then  --鏋鐭ラ亾鏄剧ず鍑烘潵浠€涔堥鑹
+		elsif(gunOK = '1')then  --枪橙色
 			q_vga <= "0111100001";
-		elsif(medicalOK = '1') then  --鍖昏嵂鍖呯櫧鑹
+		elsif(medicalOK = '1') then  --医药包红色
 			q_vga <= "0111000000";
-		elsif(isMePixel = '1') then  --鎴戞槸缁胯壊
+		elsif(isMePixel = '1') then  --我绿色
 			q_vga <= "0000111000";
-		elsif(enemyOK = '1') then  --鏁屼汉榛勮壊
+		elsif(enemyOK = '1') then  --敌人黄色
 			q_vga <= "0111111000";
 		else
-			q_vga <= "0111111111";
+			q_vga <= q_background_calc;
 		end if;
 	end if;
 end process;

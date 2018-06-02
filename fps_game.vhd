@@ -25,7 +25,10 @@ entity fps_game is
 	open_fire: in std_logic;
 	-- VGA(传入color_controller)
 	vga_hs, vga_vs: out std_logic;
-	vga_r, vga_g, vga_b: out std_logic_vector(2 downto 0)
+	vga_r, vga_g, vga_b: out std_logic_vector(2 downto 0);
+	base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
+	base_sram_addr : out std_logic_vector(19 downto 0);
+	base_sram_data : inout std_logic_vector(31 downto 0)
 	);
 end entity;
 
@@ -102,21 +105,9 @@ component color_controller is
 		postY:in std_logic_vector(8 downto 0);
 		post_select:in std_logic;  --准星选中，开火或者选物品
 		
-		
-		
-		--ram or sram data
-		--===============================TO DO=================================
-		--ram first
-		--data : out std_logic_vector(15 downto 0);
-		--rdaddr: out std_logic_vector(11 downto 0);
-		--rden : out std_logic:='1';
-		--wraddr : out std_logic_vector(11 downto 0);
-		--wren:out std_logic:='0';
-		--q:in std_logic_vector(15 downto 0);
-		
-		--tasks indicator 
-		--sync : in std_logic :='1';  --同步信号
-		--finish : out std_logic;  --计算完成
+		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
+		base_sram_addr : out std_logic_vector(19 downto 0);
+		base_sram_data : inout std_logic_vector(31 downto 0);
 		
 		data_safe: out std_logic
 	);
@@ -195,7 +186,8 @@ begin
 		);
 	u1:color_controller port map(
 		clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, player_hp, bullet_num
-		,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired, data_safe
+		,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired,
+		base_sram_we, base_sram_oe, base_sram_ce, base_sram_addr, base_sram_data, data_safe
 	);
 	
 	u2:SixtyHzSignalGenerator port map(

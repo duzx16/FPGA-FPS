@@ -33,21 +33,9 @@ entity color_controller is
 		postY:in std_logic_vector(8 downto 0);
 		post_select:in std_logic;  --准星选中，开火或者选物品
 		
-		
-		
-		--ram or sram data
-		--===============================TO DO=================================
-		--ram first
-		--data : out std_logic_vector(15 downto 0);
-		--rdaddr: out std_logic_vector(11 downto 0);
-		--rden : out std_logic:='1';
-		--wraddr : out std_logic_vector(11 downto 0);
-		--wren:out std_logic:='0';
-		--q:in std_logic_vector(15 downto 0);
-		
-		--tasks indicator 
-		--sync : in std_logic :='1';  --同步信号
-		--finish : out std_logic;  --计算完成
+		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
+		base_sram_addr : out std_logic_vector(19 downto 0);
+		base_sram_data : inout std_logic_vector(31 downto 0);
 		
 		data_safe: out std_logic
 	);
@@ -98,53 +86,22 @@ type read_status is
 		post_select:in std_logic;  --准星选中，开火或者选物品
 		
 		--ME
-		--meX:in std_logic_vector(9 downto 0);
-		--meY:in std_logic_vector(8 downto 0);
 		my_hp :in integer range 0 to 100;
 		bullet_num:in integer range 0 to 100;
 		me_firing:in std_logic;
 		
-		--enemy
-		--enemy_X: in std_logic_vector(9 downto 0);
-		--enemy_Y : in std_logic_vector(8 downto 0);
-		--enemy_type: in enemy_type_matrix; --待定
-		--enemy_firing:in std_logic;
-		
-		--objs
-		--medical_X:in std_logic_vector(9 downto 0);
-		--medical_Y:in std_logic_vector(8 downto 0);
-		--tommygun_X:in std_logic_vector(9 downto 0);
-		--tommygun_Y:in std_logic_vector(8 downto 0);
-		--object_statuses: in object_status_array;
 		object_types: in object_type_array;
       object_xs: in object_x_array;
       object_ys: in object_y_array;
       object_statuses: in object_status_array;
 		
+		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
+		base_sram_addr : out std_logic_vector(19 downto 0);
+		base_sram_data : inout std_logic_vector(31 downto 0);
+		
 		data_safe:out std_logic
 	);
 	end component;
-
-	--signal address_tmp: std_logic_vector(13 downto 0);
-	--signal q_tmp: std_logic_vector(0 downto 0);
-	--signal clk50: std_logic;
-	--signal r1, g1, b1:std_logic_vector(2 downto 0);
-	--signal hs1, vs1: std_logic;
-	--signal vector_x : std_logic_vector(9 downto 0);
-	--signal vector_y : std_logic_vector(8 downto 0);
-	--signal data_safe_tmp:std_logic;
-	
-	--signal iter_count: integer range 0 to OBJECT_LIMIT;
-	
-	--signal meX: std_logic_vector(9 downto 0); --
-	--signal meY: std_logic_vector(8 downto 0); --
-	--signal enemyX: std_logic_vector(9 downto 0);
-	--signal enemyY: std_logic_vector(8 downto 0);
-	--signal enemyfiring:std_logic; --
-	--signal medicalX: std_logic_vector(9 downto 0);
-	--signal medicalY: std_logic_vector(8 downto 0);
-	--signal tommygunX: std_logic_vector(9 downto 0);
-	--signal tommygunY: std_logic_vector(8 downto 0);
 	
 	signal cur_work : status;
 	signal rd_status : read_status;
@@ -153,7 +110,8 @@ begin
 	u1:vga_calc port map(
 								clk_0, reset, hs, vs, r, g, b, start_stage, gameover,
 								postX, postY, show_fired, player_hp, bullet_num,  --开火和选物品都用show_fired么？？？
-								show_fired, object_types, object_xs, object_ys, object_statuses ,data_safe
+								show_fired, object_types, object_xs, object_ys, object_statuses ,base_sram_we, 
+								base_sram_oe, base_sram_ce, base_sram_addr, base_sram_data, data_safe
 							);
 
 end bhv;
