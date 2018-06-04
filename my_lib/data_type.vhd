@@ -18,6 +18,8 @@ package data_type is
 	constant HGUN_WIDTH: integer:=45;
 	constant HALF_Y_LIMIT: integer := 160;
 	constant BACKGROUND_ADDR_LIMIT: integer := 153599;
+	constant ME_ADDR_BEGIN: integer := 153600;
+	constant ME_ADDR_END: integer := 156799;
 	
 	-- 物体的类型（敌人、医药包、冲锋枪，暂时还没有确定）
 	type object_type is (enemy, medical, tommygun, none);

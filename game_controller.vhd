@@ -103,12 +103,12 @@ begin
 		for i in 0 to OBJECT_LIMIT - 1 loop
 			object_types(i) <= none;
 		end loop;
---		object_types(0) <= enemy;
---		object_xs(0) <= 320;
---		object_ys(0) <= 240;
---		object_values(0) <= 100;
---		object_counts(0) <= 0;
---		object_statuses(0) <= normal;
+		object_types(0) <= tommygun;
+		object_xs(0) <= 320;
+		object_ys(0) <= 240;
+		object_values(0) <= 1000;
+		object_counts(0) <= 0;
+		object_statuses(0) <= normal;
 --		object_types(1) <= enemy;
 --		object_xs(1) <= 220;
 --		object_ys(1) <= 240;
@@ -296,7 +296,7 @@ begin
 						end if;
 					when none =>
 						-- 这里的数值决定了不同的物品被添加的概率
-						if add_object_cooldown = 0 then
+						if add_object_cooldown < 0 then
 							random_num := CONV_INTEGER(random_vector(15 downto 13));
 							object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
 							object_ys(iter_count) <= HALF_Y_LIMIT;
