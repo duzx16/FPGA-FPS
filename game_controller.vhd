@@ -19,7 +19,7 @@ entity game_controller is
 		show_post_y: buffer integer range 0 to Y_LIMIT;
 		-- 都是长度相同的数组，用来表示物体的数据
 		object_types: buffer object_type_array;
-	   object_xs: buffer object_x_array;
+	    object_xs: buffer object_x_array;
 		object_ys: buffer object_y_array;
 		object_statuses: buffer object_status_array;
 		-- 玩家的数据
@@ -46,7 +46,7 @@ port(
 );
 end component;
 -- 游戏的状态控制
-type control_state_type is (waiting, post_iter, post_act, object_iter, update_post);
+type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_stage);
 
 constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 2000;
 constant COOL_DOWN_LIMIT: integer:= 30;
@@ -95,7 +95,7 @@ begin
 		bullet_num <= BULLET_NUM_LIMIT;
 		value_changed <= '0';
 		game_over_stage <= '0';
-		start_stage <= '0';
+		start_stage <= '1';
 		show_post_x <= 100;
 		show_post_y <= 100;
 		continuous_shoot <= '0';
@@ -148,7 +148,6 @@ begin
 							end if;
 							cool_down_count <= cool_down_count - 1;
 						end if;
-						fired_temp <= '0';
 					end if;
 				else
 					value_changed <= '0';
@@ -276,7 +275,7 @@ begin
 						end if;
 					when medical =>
 						-- 物体消失的判定
-						if object_values(iter_count) = 0 or object_counts(iter_count) = 10 then
+						if object_values(iter_count) = 0 or object_counts(iter_count) = 40 then
 							object_types(iter_count) <= none;
 						-- 物体被选择的时长的判定
 						elsif object_statuses(iter_count) = selected then
@@ -352,7 +351,19 @@ begin
 					end if;
 				end if;
 				value_changed <= '1';
-				control_state <= waiting;
+				control_state <= update_stage;
+			when update_stage =>
+				if game_over_stage = '1' or start_stage = '1' then
+					if fired_temp then
+						game_over_stage <= '0';
+						start_stage <= '0';
+						fired_temp <= '0';
+					end if;
+				else
+					if player_hp = 0 then
+						game_over_stage <= '1';
+					end if;
+				end if;
 			when others =>
 				null;
 		end case;			
