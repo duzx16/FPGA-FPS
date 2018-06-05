@@ -28,7 +28,7 @@ package data_type is
 	constant ENEMY_ADDR_END:integer:= ENEMY_ADDR_BEGIN + (2 * HENEMY_HEIGHT * HENEMY_WIDTH - 1);
 	constant ENEMY_FIRE_ADDR_BEGIN:integer:=ENEMY_ADDR_END + 1;
 	constant ENEMY_FIRE_ADDR_END:integer := ENEMY_FIRE_ADDR_BEGIN + (2 * HENEMY_HEIGHT * HENEMY_WIDTH - 1);
-	constant MEDICAL_ADDR_BEGIN:integer := ENERMY_FIRE_ADDR_END + 1;
+	constant MEDICAL_ADDR_BEGIN:integer := ENEMY_FIRE_ADDR_END + 1;
 	constant MEDICAL_ADDR_END:integer := MEDICAL_ADDR_BEGIN + (2 * HMEDICAL_HEIGHT * HMEDICAL_WIDTH - 1);
 	
 	-- 物体的类型（敌人、医药包、冲锋枪，暂时还没有确定）

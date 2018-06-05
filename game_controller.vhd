@@ -29,8 +29,8 @@ entity game_controller is
 		-- 用于表示是否处于开火
 		show_fired: out std_logic;
 		-- 用于表示是否处于开始界面
-		start_stage: out std_logic;
-		game_over_stage: out std_logic;
+		start_stage: buffer std_logic;
+		game_over_stage: buffer std_logic;
 		-- 表示修改数据是否安全
 		data_safe: in std_logic
 	);
@@ -95,7 +95,7 @@ begin
 		bullet_num <= BULLET_NUM_LIMIT;
 		value_changed <= '0';
 		game_over_stage <= '0';
-		start_stage <= '1';
+		start_stage <= '0';
 		show_post_x <= 100;
 		show_post_y <= 100;
 		continuous_shoot <= '0';
@@ -124,7 +124,7 @@ begin
 				end if;
 				if data_safe = '1' then
 					if value_changed = '0' then
-						if game_over_stage or start_stage then
+						if game_over_stage = '1' or start_stage = '1' then
 							control_state <= update_stage;
 						else
 							post_selected <= OBJECT_LIMIT;
@@ -358,7 +358,7 @@ begin
 				control_state <= update_stage;
 			when update_stage =>
 				if game_over_stage = '1' or start_stage = '1' then
-					if fired_temp then
+					if fired_temp = '1' then
 						game_over_stage <= '0';
 						start_stage <= '0';
 					end if;

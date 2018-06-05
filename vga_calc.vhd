@@ -119,7 +119,7 @@ architecture bhv of vga_calc is
 	signal enemy_x, medical_x, gun_x:std_logic_vector(9 downto 0);
 	signal enemy_y, medical_y, gun_y:std_logic_vector(8 downto 0);
 
-	signal gun_cnt, enemy_cnt, medical_cnt: integer(range 0 to OBJECT_LIMIT);
+	signal gun_cnt, enemy_cnt, medical_cnt: integer range 0 to OBJECT_LIMIT;
 
 	shared variable cnt: integer := 0;
 	
@@ -233,7 +233,7 @@ process(clk_0)
 variable temp_x: integer range 0 to X_LIMIT;
 variable temp_y: integer range 0 to Y_LIMIT;
 begin
-	gunOK <= '0';
+	enemyOK <= '0';
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		if object_types(cnt) = enemy then
 				if(object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT) then
@@ -264,7 +264,6 @@ end process;
 -----------------------medical-------------------------
 process(clk_0)
 begin
-	enemyOK <= '0';
 	medicalOK <= '0';
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		case object_types(cnt) is
@@ -273,6 +272,7 @@ begin
 					medical_x <= s_x + HMEDICAL_WIDTH - object_xs(cnt);
 					medical_y <= s_y + HMEDICAL_HEIGHT - object_ys(cnt);
 					medicalOK <= '1';
+					medical_cnt <= cnt;
 					exit get_obj;
 				end if;
 			when others => next get_obj;
@@ -288,7 +288,7 @@ begin
 	if(s_y >= MeStartY and s_y <= MeEndY) then
 		temp_x := CONV_INTEGER(s_x - MeStartX);
 		temp_y := CONV_INTEGER(s_y - MeStartY);
-		if me_firing then
+		if me_firing = '1' then
 			if ((temp_x >= me_fire_pixel_left1(temp_y) and temp_x <= me_fire_pixel_right1(temp_y)) or (temp_x >= me_fire_pixel_left2(temp_y) and temp_x <= me_fire_pixel_right2(temp_y))) then
 				MeOK <= '1';
 			end if;
@@ -419,6 +419,8 @@ begin
 			else
 				q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 			end if;
+		else
+			q_background_calc <= "0111111111";
 		end if;
 		
 	end if;
