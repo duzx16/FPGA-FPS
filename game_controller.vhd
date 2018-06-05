@@ -295,7 +295,7 @@ begin
 						end if;
 					when none =>
 						-- 这里的数值决定了不同的物品被添加的概率
-						if add_object_cooldown < 0 then
+						if add_object_cooldown = 0 then
 							random_num := CONV_INTEGER(random_vector(15 downto 13));
 							object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
 							object_ys(iter_count) <= HALF_Y_LIMIT;
