@@ -193,6 +193,7 @@ begin
 		BulletnumOK <= '0';
 	end if;
 end process;
+
 ------------------------------POST-----------------------------------
 process(clk_0)
 begin
@@ -212,7 +213,7 @@ begin
 	gunOK <= '0';
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		if object_types(cnt) = tommygun then
-				if(object_ys(cnt) <= s_y + HGUN_HEIGHT and s_y < object_ys(cnt) + HGUN_HEIGHT) then
+				if(object_ys(cnt) <= s_y + HGUN_HEIGHT and s_y < object_ys(cnt) + HGUN_HEIGHT and object_xs(cnt) <= s_x + HGUN_WIDTH and s_x < object_xs(cnt) + HGUN_WIDTH) then
 					temp_x := CONV_INTEGER(s_x) + HGUN_WIDTH - object_xs(cnt);
 					temp_y := CONV_INTEGER(s_y) + HGUN_HEIGHT - object_ys(cnt);
 					if (temp_x >= gun_pixel_left1(temp_y) and temp_x <= gun_pixel_right1(temp_y)) or (temp_x >= gun_pixel_left2(temp_y) and temp_x <= gun_pixel_right2(temp_y)) then
@@ -236,7 +237,7 @@ begin
 	enemyOK <= '0';
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		if object_types(cnt) = enemy then
-				if(object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT) then
+				if(object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT and object_xs(cnt) <= s_x + HENEMY_WIDTH and s_x < object_xs(cnt) + HENEMY_WIDTH) then
 					temp_x := CONV_INTEGER(s_x) + HENEMY_WIDTH - object_xs(cnt);
 					temp_y := CONV_INTEGER(s_y) + HENEMY_HEIGHT - object_ys(cnt);
 					if object_statuses(cnt) = attack then 
@@ -285,7 +286,7 @@ variable temp_x: integer range 0 to X_LIMIT;
 variable temp_y: integer range 0 to Y_LIMIT;
 begin
 	MeOK <= '0';
-	if(s_y >= MeStartY and s_y <= MeEndY) then
+	if(s_y >= MeStartY and s_y <= MeEndY and s_x >= MeStartX and s_x <= MeEndX) then
 		temp_x := CONV_INTEGER(s_x - MeStartX);
 		temp_y := CONV_INTEGER(s_y - MeStartY);
 		if me_firing = '1' then
