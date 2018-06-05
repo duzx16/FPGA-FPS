@@ -60,7 +60,7 @@ signal cool_down_count: integer range 0 to COOL_DOWN_LIMIT:=0;
 signal value_changed: std_logic;
 signal add_object_cooldown: integer range 0 to ADD_OBJECT_COOLDOWN_LIMIT;
 -- 物品状态的一些辅助数据
-type object_count_type is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 150;
+type object_count_type is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 1000;
 type object_dir_type is array(0 to OBJECT_LIMIT - 1) of std_logic_vector(1 downto 0);
 signal object_counts: object_count_type;
 signal object_values: object_value_array;
@@ -124,29 +124,33 @@ begin
 				end if;
 				if data_safe = '1' then
 					if value_changed = '0' then
-						post_selected <= OBJECT_LIMIT;
-						if cool_down_count = 0 then
-							if fired_temp = '1' and bullet_num > 0 then
-								if continuous_shoot = '1' then
-									cool_down_count <= 8;
+						if game_over_stage or start_stage then
+							control_state <= update_stage;
+						else
+							post_selected <= OBJECT_LIMIT;
+							if cool_down_count = 0 then
+								if fired_temp = '1' and bullet_num > 0 then
+									if continuous_shoot = '1' then
+										cool_down_count <= 8;
+									else
+										cool_down_count <= COOL_DOWN_LIMIT;
+									end if;
+									show_fired <= '1';
+									bullet_num <= bullet_num - 1;
+									control_state <= post_iter;
+									iter_count <= 0;
 								else
-									cool_down_count <= COOL_DOWN_LIMIT;
+									control_state <= object_iter;
+									iter_count <= 0;
 								end if;
-								show_fired <= '1';
-								bullet_num <= bullet_num - 1;
-								control_state <= post_iter;
-								iter_count <= 0;
 							else
 								control_state <= object_iter;
 								iter_count <= 0;
+								if cool_down_count < 5 then
+									show_fired <= '0';
+								end if;
+								cool_down_count <= cool_down_count - 1;
 							end if;
-						else
-							control_state <= object_iter;
-							iter_count <= 0;
-							if cool_down_count < 20 then
-								show_fired <= '0';
-							end if;
-							cool_down_count <= cool_down_count - 1;
 						end if;
 					end if;
 				else
@@ -357,13 +361,13 @@ begin
 					if fired_temp then
 						game_over_stage <= '0';
 						start_stage <= '0';
-						fired_temp <= '0';
 					end if;
 				else
 					if player_hp = 0 then
 						game_over_stage <= '1';
 					end if;
 				end if;
+				fired_temp <= '0';
 			when others =>
 				null;
 		end case;			
