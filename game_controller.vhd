@@ -354,7 +354,6 @@ begin
 						bullet_update_count <= bullet_update_count + 1;
 					end if;
 				end if;
-				value_changed <= '1';
 				control_state <= update_stage;
 			when update_stage =>
 				if game_over_stage = '1' or start_stage = '1' then
@@ -368,6 +367,8 @@ begin
 					end if;
 				end if;
 				fired_temp <= '0';
+				value_changed <= '1';
+				control_state <= waiting;
 			when others =>
 				null;
 		end case;			
