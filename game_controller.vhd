@@ -45,13 +45,15 @@ port(
 	num : out std_logic_vector(15 downto 0) --random number
 );
 end component;
--- 游戏的状态控制
-type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_stage);
-
+-- 控制游戏难度的常数
 constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 2000;
 constant COOL_DOWN_LIMIT: integer:= 30;
 constant BULLET_UPDATE_LIMIT: integer:= 180;
-
+constant ENEMY_ACTION_INTEVAL: integer:= 600;
+constant PLAYER_ATK: integer:= 110;
+constant ENEMY_ATK: integer:= 1;
+-- 游戏的状态控制
+type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_stage, restart);
 
 signal control_state:control_state_type;
 signal iter_count: integer range 0 to OBJECT_LIMIT;
@@ -95,7 +97,7 @@ begin
 		bullet_num <= BULLET_NUM_LIMIT;
 		value_changed <= '0';
 		game_over_stage <= '0';
-		start_stage <= '0';
+		start_stage <= '1';
 		show_post_x <= 100;
 		show_post_y <= 100;
 		continuous_shoot <= '0';
@@ -103,12 +105,12 @@ begin
 		for i in 0 to OBJECT_LIMIT - 1 loop
 			object_types(i) <= none;
 		end loop;
-		object_types(0) <= tommygun;
-		object_xs(0) <= 320;
-		object_ys(0) <= 240;
-		object_values(0) <= 1000;
-		object_counts(0) <= 0;
-		object_statuses(0) <= normal;
+--		object_types(0) <= tommygun;
+--		object_xs(0) <= 320;
+--		object_ys(0) <= 240;
+--		object_values(0) <= 1000;
+--		object_counts(0) <= 0;
+--		object_statuses(0) <= normal;
 --		object_types(1) <= enemy;
 --		object_xs(1) <= 220;
 --		object_ys(1) <= 240;
@@ -188,12 +190,12 @@ begin
 						when enemy =>
 							object_statuses(post_selected) <= selected;
 							-- 从130开始进入被攻击画面
-							object_counts(post_selected) <= 130;
+							object_counts(post_selected) <= ENEMY_ACTION_INTEVAL + 1;
 							-- 对敌人进行减血
-							if object_values(post_selected) < 110 then
+							if object_values(post_selected) <= PLAYER_ATK then
 								object_types(post_selected) <= none;
 							else
-								object_values(post_selected) <= object_values(post_selected) - 40;
+								object_values(post_selected) <= object_values(post_selected) - PLAYER_ATK;
 							end if;
 						when medical =>
 							object_statuses(post_selected) <= selected;
@@ -221,18 +223,34 @@ begin
 					when enemy =>
 						if object_counts(iter_count) = 0 then
 							-- 决定敌人移动的方向
-							if random_vector(0) = '1' and object_xs(iter_count) + HENEMY_WIDTH < X_LIMIT then
-								object_dirs(iter_count)(0) <= '1';
-							elsif object_xs(iter_count) > HENEMY_WIDTH then
-								object_dirs(iter_count)(0) <= '0';
+							if random_vector(0) = '1' then
+								if object_xs(iter_count) + HENEMY_WIDTH < X_LIMIT then
+									object_dirs(iter_count)(0) <= '1';
+								else
+									object_dirs(iter_count)(0) <= '0';
+								end if;
+							else
+								if object_xs(iter_count) > HENEMY_WIDTH then
+									object_dirs(iter_count)(0) <= '0';
+								else
+									object_dirs(iter_count)(0) <= '1';
+								end if;
 							end if;
-							if random_vector(1) = '1' and object_ys(iter_count) > HENEMY_HEIGHT then
-								object_dirs(iter_count)(1) <= '1';
-							elsif object_ys(iter_count) > HALF_Y_LIMIT then
-								object_dirs(iter_count)(1) <= '0';
+							if random_vector(1) = '1' then
+							if object_ys(iter_count) + HENEMY_HEIGHT < Y_LIMIT then
+									object_dirs(iter_count)(1) <= '1';
+								else
+									object_dirs(iter_count)(1) <= '0';
+								end if;
+							else
+								if object_ys(iter_count) > HALF_Y_LIMIT then
+									object_dirs(iter_count)(1) <= '0';
+								else
+									object_dirs(iter_count)(1) <= '1';
+								end if;
 							end if;
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
-						elsif object_counts(iter_count) <= 10 then
+						elsif object_counts(iter_count) <= 30 then
 							-- 进行敌人的移动
 							if object_dirs(iter_count)(1) = '1' then
 								if object_ys(iter_count) + HENEMY_HEIGHT < Y_LIMIT then
@@ -253,15 +271,18 @@ begin
 								end if;
 							end if;
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
-						end if;
 						-- 这里的数值决定了敌方动作的长度
-						if object_counts(iter_count) <= 120 then
-							if object_counts(iter_count) = 120 then
+						elsif object_counts(iter_count) <= ENEMY_ACTION_INTEVAL then
+							if object_counts(iter_count) = ENEMY_ACTION_INTEVAL then
 								-- 进行开火，我方生命下降
-								player_hp <= player_hp - 5;
+								if player_hp <= ENEMY_ATK then
+									player_hp <= 0;
+								else
+									player_hp <= player_hp - ENEMY_ATK;
+								end if;
 								object_statuses(iter_count) <= normal;
 								object_counts(iter_count) <= 0;
-							elsif object_counts(iter_count) = 100 then
+							elsif object_counts(iter_count) = ENEMY_ACTION_INTEVAL - 60 then
 								-- 开始进入开火状态
 								object_statuses(iter_count) <= attack;
 								object_counts(iter_count) <= object_counts(iter_count) + 1;
@@ -270,7 +291,7 @@ begin
 							end if;
 						else
 							-- 在150时被攻击的状态终止
-							if object_counts(iter_count) = 150 then
+							if object_counts(iter_count) = ENEMY_ACTION_INTEVAL + 60 then
 								object_statuses(iter_count) <= normal;
 								object_counts(iter_count) <= 0;
 							else
@@ -356,10 +377,23 @@ begin
 				end if;
 				control_state <= update_stage;
 			when update_stage =>
-				if game_over_stage = '1' or start_stage = '1' then
+				if start_stage = '1' then
+					if fired_temp = '1' then
+						start_stage <= '0'; 
+					end if;
+				elsif game_over_stage = '1' then
 					if fired_temp = '1' then
 						game_over_stage <= '0';
-						start_stage <= '0';
+						start_stage <= '1';
+						cool_down_count <= 0;
+						bullet_update_count <= 0;
+						add_object_cooldown <= 0;
+						player_hp <= 100;
+						bullet_num <= BULLET_NUM_LIMIT;
+						continuous_shoot <= '0';
+						for i in 0 to OBJECT_LIMIT - 1 loop
+							object_types(i) <= none;
+						end loop;
 					end if;
 				else
 					if player_hp = 0 then

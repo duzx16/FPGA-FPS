@@ -120,15 +120,11 @@ architecture bhv of vga_calc is
 	signal enemy_y, medical_y, gun_y:std_logic_vector(8 downto 0);
 
 	signal gun_cnt, enemy_cnt, medical_cnt: integer range 0 to OBJECT_LIMIT;
-
-	shared variable cnt: integer := 0;
 	
 	signal rwselect:std_logic;
 	signal addr_cnt:std_logic_vector(19 downto 0);
 	signal data_read, data_wrote : std_logic_vector(31 downto 0);
 	
-	signal q_background_calc:std_logic_vector(9 downto 0);
-	signal background_addr:std_logic_vector(19 downto 0):= (others=>'0');
 	signal clk25:std_logic;
 begin
 	
@@ -209,8 +205,12 @@ end process;
 process(clk_0)
 variable temp_x: integer range 0 to X_LIMIT;
 variable temp_y: integer range 0 to Y_LIMIT;
+variable cnt: integer := 0;
 begin
 	gunOK <= '0';
+	gun_cnt <= OBJECT_LIMIT;
+	gun_x <= "0000000000";
+	gun_y <= "000000000";
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		if object_types(cnt) = tommygun then
 				if(object_ys(cnt) <= s_y + HGUN_HEIGHT and s_y < object_ys(cnt) + HGUN_HEIGHT and object_xs(cnt) <= s_x + HGUN_WIDTH and s_x < object_xs(cnt) + HGUN_WIDTH) then
@@ -233,8 +233,12 @@ end process;
 process(clk_0)
 variable temp_x: integer range 0 to X_LIMIT;
 variable temp_y: integer range 0 to Y_LIMIT;
+variable cnt: integer := 0;
 begin
 	enemyOK <= '0';
+	enemy_cnt <= OBJECT_LIMIT;
+	enemy_x <= "0000000000";
+	enemy_y <= "000000000";
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		if object_types(cnt) = enemy then
 				if(object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT and object_xs(cnt) <= s_x + HENEMY_WIDTH and s_x < object_xs(cnt) + HENEMY_WIDTH) then
@@ -264,8 +268,12 @@ end process;
 
 -----------------------medical-------------------------
 process(clk_0)
+variable cnt: integer := 0;
 begin
 	medicalOK <= '0';
+	medical_cnt <= OBJECT_LIMIT;
+	medical_x <= "0000000000";
+	medical_y <= "000000000";
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		case object_types(cnt) is
 			when medical=>
@@ -300,128 +308,129 @@ begin
 		end if;
 	end if;
 end process;
----------------------------Gameover-----------------------------------
-process(clk_0)
-begin
-	if gameover = '1' then
-		GameoverOK <= '1';
-	else
-		GameoverOK <= '0';
-	end if;
-end process;
----------------------------GameStart----------------------------------
-process(clk_0)
-begin
-	if gamestart = '1' then
-		GamestartOK <= '1';
-	else
-		GamestartOK <= '0';
-	end if;
-end process;
-----------------------------------------------------------------------
 --++++++++++++++++++++++++  SRAM DATA ++++++++++++++++++++++++++++++++
-process(clk50, addr_cnt, reset)
+process(clk50, reset)
+variable temp_addr:std_logic_vector(19 downto 0):= (others=>'0');
 begin
 	----------------------- background --------------------------
 	if clk50'event and clk50 = '1' then
-		if(MeOK = '1') then
+		if (gamestart = '1') then
+			q_vga <= "0111111000";
+		elsif (gameover = '1') then
+			q_vga <= "0000001001";
+		elsif(HpOK = '1') then   --血量红色
+			q_vga <= "0111000000";
+		elsif(BulletnumOK = '1') then  --子弹量蓝色
+			q_vga <= "0000000111";
+		elsif(PostOK = '1') then  --准星黑色
+			q_vga <= "0000000000";	
+		elsif(MeOK = '1') then
 			if me_firing = '1' then
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - MeStartX) / 2 + conV_INTEGER(s_y - MestartY) * 80, 20) + ME_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - MeStartX) / 2 + conV_INTEGER(s_y - MestartY) * 80, 20) + ME_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
 			elsif me_firing = '0' then
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - MeStartX) / 2 + conV_INTEGER(s_y - MestartY) * 80, 20) + ME_NO_FIRE_START;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - MeStartX) / 2 + conV_INTEGER(s_y - MestartY) * 80, 20) + ME_NO_FIRE_START;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
 			end if;
-			
+			--q_vga <= "0000111000";
 		elsif(gunOK = '1') then
 			if(object_statuses(gun_cnt) = selected) then
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(gun_cnt) - HGUN_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(gun_cnt) - HGUN_HEIGHT)) * HGUN_WIDTH, 20) + GUN_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(gun_x) / 2 + 
+					conV_INTEGER(gun_y) * HGUN_WIDTH, 20) + GUN_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0000111000";
 			else
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(gun_cnt) - HGUN_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(gun_cnt) - HGUN_HEIGHT)) * HGUN_WIDTH, 20) + GUN_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(gun_x) / 2 + 
+					conV_INTEGER(gun_y) * HGUN_WIDTH, 20) + GUN_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0111111000";
 			end if;
+			
 		elsif(enemyOK = '1') then
 			if(object_statuses(enemy_cnt) = selected) then
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(enemy_cnt) - HENEMY_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(enemy_cnt) - HENEMY_HEIGHT)) * HENEMY_WIDTH, 20) + ENEMY_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(enemy_x) / 2 + 
+					conV_INTEGER(enemy_y) * HENEMY_WIDTH, 20) + ENEMY_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0111111111";
 			elsif(object_statuses(enemy_cnt) = attack) then
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(enemy_cnt) - HENEMY_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(enemy_cnt) - HENEMY_HEIGHT)) * HENEMY_WIDTH, 20) + ENEMY_FIRE_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(enemy_x) / 2 + 
+					conV_INTEGER(enemy_y) * HENEMY_WIDTH, 20) + ENEMY_FIRE_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0000111000";
 			else
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(enemy_cnt) - HENEMY_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(enemy_cnt) - HENEMY_HEIGHT)) * HENEMY_WIDTH, 20) + ENEMY_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(CONV_INTEGER(enemy_x) / 2 + 
+					conV_INTEGER(enemy_y) * HENEMY_WIDTH, 20) + ENEMY_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0000111111";
 			end if;
 		elsif(medicalOK = '1') then
 			if(object_statuses(medical_cnt) = selected) then
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(medical_cnt) - HMEDICAL_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(medical_cnt) - HMEDICAL_HEIGHT)) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(CONV_INTEGER(medical_x) / 2 + 
+					conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0000000000";
 			else
-				background_addr <= conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - (object_xs(medical_cnt) - HMEDICAL_WIDTH)) / 2 + 
-					conV_INTEGER(s_y - (object_ys(medical_cnt) - HMEDICAL_HEIGHT)) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
-				addr_cnt <= background_addr;
-				if background_addr(0) = '0' then
-					q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(medical_x) / 2 + 
+					conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
+				addr_cnt <= temp_addr;
+				if temp_addr(0) = '0' then
+					q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 				else
-					q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 				end if;
+				--q_vga <= "0111000000";
 			end if;
 		elsif s_x < 640 and s_y < 480 then			
-			background_addr <= CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20);
-			addr_cnt <= background_addr;
-			if background_addr(0) = '0' then
-				q_background_calc <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+			temp_addr := CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20);
+			addr_cnt <= temp_addr;
+			if temp_addr(0) = '0' then
+				q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 			else
-				q_background_calc <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+				q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 			end if;
+			--q_vga <= "0111111111";
 		else
-			q_background_calc <= "0111111111";
+			q_vga <= "0111111111";
 		end if;
 		
 	end if;
@@ -430,45 +439,45 @@ begin
 end process;
 --+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-----------------------Connect2VGA640480------------------------------
-process(clk_0)
-begin
-	if(BoarderOK = '1') then
-		q_vga <= "0111111111";
-	end if;
-	-------------------TODO-----------------------
-	
-	if(gamestart = '1') then                           
-		if(GameoverOK = '1') then
-			q_vga <= "0111111000";
-		else
-			q_vga <= "0000001001";
-		end if;
-	elsif(gameover = '1') then
-		if GameoverOK <= '1' then
-			q_vga <= "0111000000";
-		else
-			q_vga <= "0000001001";
-		end if;
-	else
-		if(HpOK = '1') then   --血量红色
-			q_vga <= "0111000000";
-		elsif(BulletnumOK = '1') then  --子弹量蓝色
-			q_vga <= "0000000111";
-		elsif(PostOK = '1') then  --准星黑色
-			q_vga <= q_background_calc;
-		elsif(gunOK = '1')then  --枪橙色
-			q_vga <= q_background_calc;
-		elsif(medicalOK = '1') then  --医药包红色
-			q_vga <= q_background_calc;
-		elsif(MeOK = '1') then  --我绿色
-			q_vga <= q_background_calc;
-		elsif(enemyOK = '1') then  --敌人黄色
-			q_vga <= q_background_calc;
-		else
-			q_vga <= q_background_calc;
-		end if;
-	end if;
-end process;
----------------------------------------------------------------------
+------------------------Connect2VGA640480------------------------------
+--process(clk_0)
+--begin
+--	if(BoarderOK = '1') then
+--		q_vga <= "0111111111";
+--	end if;
+--	-------------------TODO-----------------------
+--	
+--	if(gamestart = '1') then                           
+--		if(GameoverOK = '1') then
+--			q_vga <= "0111111000";
+--		else
+--			q_vga <= "0000001001";
+--		end if;
+--	elsif(gameover = '1') then
+--		if GameoverOK <= '1' then
+--			q_vga <= "0111000000";
+--		else
+--			q_vga <= "0000001001";
+--		end if;
+--	else
+--		if(HpOK = '1') then   --血量红色
+--			q_vga <= "0111000000";
+--		elsif(BulletnumOK = '1') then  --子弹量蓝色
+--			q_vga <= "0000000111";
+--		elsif(PostOK = '1') then  --准星黑色
+--			q_vga <= q_vga;
+--		elsif(gunOK = '1')then  --枪橙色
+--			q_vga <= q_vga;
+--		elsif(medicalOK = '1') then  --医药包红色
+--			q_vga <= q_vga;
+--		elsif(MeOK = '1') then  --我绿色
+--			q_vga <= q_vga;
+--		elsif(enemyOK = '1') then  --敌人黄色
+--			q_vga <= q_vga;
+--		else
+--			q_vga <= q_vga;
+--		end if;
+--	end if;
+--end process;
+-----------------------------------------------------------------------
 end bhv;
