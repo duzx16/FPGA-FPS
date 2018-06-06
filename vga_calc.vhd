@@ -2,6 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
+use ieee.numeric_std.all;
 
 library my_lib;
 use my_lib.data_type.all;
@@ -32,6 +33,7 @@ entity vga_calc is
         object_xs: in object_x_array;
         object_ys: in object_y_array;
         object_statuses: in object_status_array;
+        object_values: in object_value_array;
 		
 		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
 		base_sram_addr : out std_logic_vector(19 downto 0);
@@ -39,6 +41,7 @@ entity vga_calc is
 		
 		data_safe:out std_logic
 	);
+	
 	end vga_calc;
 	
 architecture bhv of vga_calc is
@@ -98,12 +101,12 @@ architecture bhv of vga_calc is
 	constant gun_pixel_left2: GUN_PIXEL_LIMIT := (51,51,51,51,1,84,1,1,1,65,68,70,71,76,77,78,79,80,81,82,55,55,56,56,56,1,1,1,1,1);
 	constant gun_pixel_right2: GUN_PIXEL_LIMIT := (53,54,54,54,0,87,0,0,0,90,90,90,90,90,88,88,88,88,87,87,60,60,60,61,61,0,0,0,0,0);
 
-	constant hpStart_x:std_LOGIC_vector(9 downto 0) := "1001011000";
+	constant hpStart_x:std_LOGIC_vector(9 downto 0) := "1000111010";
 	constant hpEnd_x:std_LOGIC_vector(9 downto 0) := "1001101100";
 	constant hpStart_y:std_LOGIC_vector(8 downto 0) := "000010100";
 	constant hpEnd_y:std_logic_vector(8 downto 0) := "000011110";
 	
-	constant BullnumStart_x:std_LOGIC_vector(9 downto 0) := "1001011000";
+	constant BullnumStart_x:std_LOGIC_vector(9 downto 0) := "1000111010";
 	constant BullnumEnd_x:std_LOGIC_vector(9 downto 0) := "1001101100";
 	constant BullnumStart_y:std_LOGIC_vector(8 downto 0) := "111000010";
 	constant BullnumEnd_y:std_logic_vector(8 downto 0) := "111001100";
@@ -167,7 +170,7 @@ end process;
 process(clk_0)
 begin
 	if(s_x >= hpStart_x and s_x <= hpEnd_x and s_y >= hpStart_y and s_y <= hpEnd_y) then
-		if(CONV_INTEGER(s_x - hpStart_x) * PLAYER_HP_LIMIT <= my_hp * 20) then
+		if(CONV_INTEGER(s_x - hpStart_x) * PLAYER_HP_LIMIT <= my_hp * 50) then
 			HpOK <= '1';
 		else
 			HpOK <= '0';
@@ -180,7 +183,7 @@ end process;
 process(clk_0)
 begin
 	if(s_x >= BullnumStart_x and s_x <= BullnumEnd_x and s_y >= BullnumStart_y and s_y <= BullnumEnd_y) then
-		if(CONV_INTEGER(s_x - BullnumStart_x) * BULLET_NUM_LIMIT <= bullet_num * 20) then
+		if(CONV_INTEGER(s_x - BullnumStart_x) * BULLET_NUM_LIMIT <= bullet_num * 50) then
 			BulletnumOK <= '1';
 		else
 			BulletnumOK <= '0';
@@ -192,20 +195,40 @@ end process;
 
 ------------------------------POST-----------------------------------
 process(clk_0)
+variable dis2:integer range 0 to 640000;
 begin
-	if(postX <= s_x + 3 and s_x <= postX + 3 and postY <= s_y + 3 and s_y <= postY + 3) then
-		PostOK <= '1';
+	postOK <= '0';
+	if(postX <= s_x and postY <= s_y) then
+		dis2 := conV_INTEGER(s_x-postX)*conV_INTEGER(s_x-postX)+conV_INTEGER(s_y-postY)*conV_INTEGER(s_y-postY);
+	elsif(postX <= s_x and postY > s_y) then
+		dis2 := conV_INTEGER(s_x-postX)*conV_INTEGER(s_x-postX)+conV_INTEGER(postY-s_y)*conV_INTEGER(postY-s_y);
+	elsif(postX > s_x and postY <= s_y) then
+		dis2 := conV_INTEGER(postX-s_x)*conV_INTEGER(postX-s_x)+conV_INTEGER(s_y-postY)*conV_INTEGER(s_y-postY);
+	elsif(postX > s_x and postY > s_y) then
+		dis2 := conV_INTEGER(postX-s_x)*conV_INTEGER(postX-s_x)+conV_INTEGER(postY-s_y)*conV_INTEGER(postY-s_y);
 	else
-		PostOK <= '0';
+		null;
+	end if;
+	
+	if post_select = '0' then
+		if(dis2 >= 9 and dis2 <= 25) then
+			PostOK <= '1';
+		else
+			PostOK <= '0';
+		end if;
+	elsif post_select = '1' then
+		if(dis2 >= 25 and dis2 <= 49) then
+			postOK <= '1';
+		else
+			postOK <= '0';
+		end if;
 	end if;
 end process;
-
-
 --------------------gun----------------------------
 process(clk_0)
 variable temp_x: integer range 0 to X_LIMIT;
 variable temp_y: integer range 0 to Y_LIMIT;
-variable cnt: integer := 0;
+variable cnt: integer range 0 to OBJECT_LIMIT := 0;
 begin
 	gunOK <= '0';
 	gun_cnt <= OBJECT_LIMIT;
@@ -227,13 +250,30 @@ begin
 		end if;
 	end loop get_obj;
 end process;
-
+--------------------enemy HP--------------------
+process(clk_0)
+variable cnt: integer range 0 to OBJECT_LIMIT:=0;
+variable temp_x: integer range 0 to X_LIMIT;
+begin
+	enemyHPOK <= '0';
+	get_obj: for cnt in 0 to OBJECT_LIMIT - 1 loop
+		if object_types(cnt) = enemy then
+			if(s_x >= object_xs(cnt) - HENEMY_WIDTH - 3 and s_x <= object_xs(cnt) + HENEMY_WIDTH + 3 and 
+			s_y <= object_ys(cnt) - HENEMY_HEIGHT - 3 and s_y >= object_ys(cnt) - HENEMY_HEIGHT - 8) then
+				temp_x := s_x - object_xs(cnt) + HENEMY_WIDTH + 3;
+				if temp_x * PLAYER_HP_LIMIT < object_values(cnt) * (HENEMY_WIDTH * 2 + 6) then
+					enemyHPOK <= '1';
+				end if;
+			end if;
+		end if;
+	end loop get_obj;
+end process;
 
 --------------------enemy------------------------
 process(clk_0)
 variable temp_x: integer range 0 to X_LIMIT;
 variable temp_y: integer range 0 to Y_LIMIT;
-variable cnt: integer := 0;
+variable cnt: integer range 0 to OBJECT_LIMIT := 0;
 begin
 	enemyOK <= '0';
 	enemy_cnt <= OBJECT_LIMIT;
@@ -241,34 +281,35 @@ begin
 	enemy_y <= "000000000";
 	get_obj:for cnt in 0 to OBJECT_LIMIT - 1 loop
 		if object_types(cnt) = enemy then
-				if(object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT and object_xs(cnt) <= s_x + HENEMY_WIDTH and s_x < object_xs(cnt) + HENEMY_WIDTH) then
-					temp_x := CONV_INTEGER(s_x) + HENEMY_WIDTH - object_xs(cnt);
-					temp_y := CONV_INTEGER(s_y) + HENEMY_HEIGHT - object_ys(cnt);
-					if object_statuses(cnt) = attack then 
-						if (temp_x >= enemy_no_pixel_left1(temp_y) and temp_x <= enemy_no_pixel_right1(temp_y)) or (temp_x >= enemy_no_pixel_left2(temp_y) and temp_x <= enemy_no_pixel_right2(temp_y)) then
-							enemy_x <= CONV_STD_LOGIC_VECTOR(temp_x, 10);
-							enemy_y <= CONV_STD_LOGIC_VECTOR(temp_y, 9);
-							enemyOK <= '1';
-							enemy_cnt <= cnt;
-							exit get_obj;
-						end if;
-					else
-						if (temp_x >= enemy_no_pixel_left1(temp_y) and temp_x <= enemy_no_pixel_right1(temp_y)) or (temp_x >= enemy_no_pixel_left2(temp_y) and temp_x <= enemy_no_pixel_right2(temp_y)) then
-							enemy_x <= CONV_STD_LOGIC_VECTOR(temp_x, 10);
-							enemy_y <= CONV_STD_LOGIC_VECTOR(temp_y, 9);
-							enemyOK <= '1';
-							enemy_cnt <= cnt;
-							exit get_obj;
-						end if;
+			
+			elsif(object_ys(cnt) <= s_y + HENEMY_HEIGHT and s_y < object_ys(cnt) + HENEMY_HEIGHT and object_xs(cnt) <= s_x + HENEMY_WIDTH and s_x < object_xs(cnt) + HENEMY_WIDTH) then
+				temp_x := CONV_INTEGER(s_x) + HENEMY_WIDTH - object_xs(cnt);
+				temp_y := CONV_INTEGER(s_y) + HENEMY_HEIGHT - object_ys(cnt);
+				if object_statuses(cnt) = attack then 
+					if (temp_x >= enemy_no_pixel_left1(temp_y) and temp_x <= enemy_no_pixel_right1(temp_y)) or (temp_x >= enemy_no_pixel_left2(temp_y) and temp_x <= enemy_no_pixel_right2(temp_y)) then
+						enemy_x <= CONV_STD_LOGIC_VECTOR(temp_x, 10);
+						enemy_y <= CONV_STD_LOGIC_VECTOR(temp_y, 9);
+						enemyOK <= '1';
+						enemy_cnt <= cnt;
+						exit get_obj;
+					end if;
+				else
+					if (temp_x >= enemy_no_pixel_left1(temp_y) and temp_x <= enemy_no_pixel_right1(temp_y)) or (temp_x >= enemy_no_pixel_left2(temp_y) and temp_x <= enemy_no_pixel_right2(temp_y)) then
+						enemy_x <= CONV_STD_LOGIC_VECTOR(temp_x, 10);
+						enemy_y <= CONV_STD_LOGIC_VECTOR(temp_y, 9);
+						enemyOK <= '1';
+						enemy_cnt <= cnt;
+						exit get_obj;
 					end if;
 				end if;
+			end if;
 		end if;
 	end loop get_obj;
 end process;
 
 -----------------------medical-------------------------
 process(clk_0)
-variable cnt: integer := 0;
+variable cnt: integer range 0 to OBJECT_LIMIT := 0;
 begin
 	medicalOK <= '0';
 	medical_cnt <= OBJECT_LIMIT;
@@ -318,12 +359,14 @@ begin
 			q_vga <= "0111111000";
 		elsif (gameover = '1') then
 			q_vga <= "0000001001";
-		elsif(HpOK = '1') then   --血量红色
+		elsif(HpOK = '1' or enemyHPOK = '1') then   --血量红色
 			q_vga <= "0111000000";
 		elsif(BulletnumOK = '1') then  --子弹量蓝色
 			q_vga <= "0000000111";
-		elsif(PostOK = '1') then  --准星黑色
-			q_vga <= "0000000000";	
+		elsif(PostOK = '1' and post_select = '1') then
+			q_vga <= "0111000000";
+		elsif(postOK = '1' and post_select = '0') then
+			q_vga <= "0111111000";
 		elsif(MeOK = '1') then
 			if me_firing = '1' then
 				temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - MeStartX) / 2 + conV_INTEGER(s_y - MestartY) * 80, 20) + ME_ADDR_BEGIN;

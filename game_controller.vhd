@@ -22,6 +22,7 @@ entity game_controller is
 	    object_xs: buffer object_x_array;
 		object_ys: buffer object_y_array;
 		object_statuses: buffer object_status_array;
+		object_values: buffer object_value_array;
 		-- 玩家的数据
 		player_hp: buffer integer range 0 to PLAYER_HP_LIMIT;
 		-- 子弹相关的数据
@@ -65,7 +66,6 @@ signal add_object_cooldown: integer range 0 to ADD_OBJECT_COOLDOWN_LIMIT;
 type object_count_type is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 1000;
 type object_dir_type is array(0 to OBJECT_LIMIT - 1) of std_logic_vector(1 downto 0);
 signal object_counts: object_count_type;
-signal object_values: object_value_array;
 signal object_dirs: object_dir_type;
 -- 表示玩家是否进行了射击
 signal fired_temp: std_logic;

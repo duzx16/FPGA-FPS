@@ -64,6 +64,7 @@ component game_controller is
 	    object_xs: buffer object_x_array;
 		object_ys: buffer object_y_array;
 		object_statuses: buffer object_status_array;
+		object_values: buffer object_value_array;
 		-- 玩家的数据
 		player_hp: buffer integer range 0 to PLAYER_HP_LIMIT;
 		-- 子弹相关的数据
@@ -87,10 +88,10 @@ component color_controller is
 		r,g,b  : out std_logic_vector(2 downto 0);
 		
 		object_types: in object_type_array;
-      object_xs: in object_x_array;
-      object_ys: in object_y_array;
-      object_statuses: in object_status_array;
-		--object_values: in object_value_array;
+        object_xs: in object_x_array;
+        object_ys: in object_y_array;
+        object_statuses: in object_status_array;
+		object_values: in object_value_array;
 		-- 玩家的数据
 		player_hp: in integer range 0 to PLAYER_HP_LIMIT;
 		-- 枪支相关的数据
@@ -131,6 +132,7 @@ signal object_types: object_type_array;
 signal object_xs: object_x_array;
 signal object_ys: object_y_array;
 signal object_statuses: object_status_array;
+signal object_values: object_value_array;
 -- 玩家的数据
 signal player_hp: integer range 0 to PLAYER_HP_LIMIT;
 -- 枪支相关的数据
@@ -169,9 +171,10 @@ begin
 		show_post_y => show_post_y,
 		-- 都是长度相同的数组，用来表示物体的数据
 		object_types => object_types,
-	   object_xs => object_xs,
+	     object_xs => object_xs,
 		object_ys => object_ys,
 		object_statuses => object_statuses,
+		object_values => object_values,
 		-- 玩家的数据
 		player_hp => player_hp,
 		-- 子弹相关的数据
@@ -185,7 +188,7 @@ begin
 		data_safe => data_safe
 		);
 	u1:color_controller port map(
-		clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, player_hp, bullet_num
+		clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, object_values, player_hp, bullet_num
 		,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired,
 		base_sram_we, base_sram_oe, base_sram_ce, base_sram_addr, base_sram_data, data_safe
 	);
