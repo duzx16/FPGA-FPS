@@ -16,7 +16,7 @@ package data_type is
 	constant HMEDICAL_HEIGHT: integer:=8;
 	constant HGUN_HEIGHT: integer:= 15;
 	constant HGUN_WIDTH: integer:=45;
-	constant HALF_Y_LIMIT: integer := 160;
+	constant HALF_Y_LIMIT: integer := 280;
 	constant BACKGROUND_ADDR_LIMIT: integer := 153599;
 	constant ME_ADDR_BEGIN: integer := 153600;
 	constant ME_ADDR_END: integer := ME_ADDR_BEGIN + 12799;
@@ -42,6 +42,6 @@ package data_type is
 	type object_y_array is array(0 to OBJECT_LIMIT - 1) of integer range 0 to Y_LIMIT;
 	type object_status_array is array(0 to OBJECT_LIMIT - 1) of object_status;
 	-- 这个数组是预留出来存放物体的数值的，比如敌人的血量，医药包和枪支的剩余存在时间
-	type object_value_array is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 2047;
+	type object_value_array is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 5000;
 
 end package;
