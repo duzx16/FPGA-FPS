@@ -51,10 +51,10 @@ constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 2000;
 constant COOL_DOWN_LIMIT: integer:= 30;
 constant BULLET_UPDATE_LIMIT: integer:= 180;
 constant ENEMY_ACTION_INTEVAL: integer:= 600;
-constant PLAYER_ATK: integer:= 110;
+constant PLAYER_ATK: integer:= 40;
 constant ENEMY_ATK: integer:= 1;
 -- 游戏的状态控制
-type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_stage, restart);
+type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_gun, update_stage, restart);
 
 signal control_state:control_state_type;
 signal iter_count: integer range 0 to OBJECT_LIMIT;
@@ -70,7 +70,7 @@ signal object_dirs: object_dir_type;
 -- 表示玩家是否进行了射击
 signal fired_temp: std_logic;
 -- 表示玩家是否有冲锋枪
-signal continuous_shoot: std_logic;
+-- 现在这个信号被位置0的type代替
 -- 表示准星选择的目标
 signal post_selected: integer range 0 to OBJECT_LIMIT;
 -- 随机数用于敌人移动、物品生成
@@ -100,7 +100,6 @@ begin
 		start_stage <= '1';
 		show_post_x <= 100;
 		show_post_y <= 100;
-		continuous_shoot <= '0';
 		
 		for i in 0 to OBJECT_LIMIT - 1 loop
 			object_types(i) <= none;
@@ -132,23 +131,23 @@ begin
 							post_selected <= OBJECT_LIMIT;
 							if cool_down_count = 0 then
 								if fired_temp = '1' and bullet_num > 0 then
-									if continuous_shoot = '1' then
-										cool_down_count <= 8;
+									if object_types(0) = tommygun then
+										cool_down_count <= 3;
 									else
 										cool_down_count <= COOL_DOWN_LIMIT;
 									end if;
 									show_fired <= '1';
 									bullet_num <= bullet_num - 1;
 									control_state <= post_iter;
-									iter_count <= 0;
+									iter_count <= 1;
 								else
 									control_state <= object_iter;
-									iter_count <= 0;
+									iter_count <= 1;
 								end if;
 							else
 								control_state <= object_iter;
-								iter_count <= 0;
-								if cool_down_count < 5 then
+								iter_count <= 1;
+								if cool_down_count = 1 then
 									show_fired <= '0';
 								end if;
 								cool_down_count <= cool_down_count - 1;
@@ -159,7 +158,6 @@ begin
 					value_changed <= '0';
 				end if;
 			when post_iter =>
-				-- todo:遍历各个物品，找到准星攻击的目标
 				-- 这里的数值决定了物品包围盒的大小
 				case object_types(iter_count) is
 					when enemy =>
@@ -210,13 +208,17 @@ begin
 							object_statuses(post_selected) <= selected;
 							object_counts(post_selected) <= 0;
 							-- 获得冲锋枪效果
-							continuous_shoot <= '1';
+							object_types(0) <= tommygun;
+							object_statuses(0) <= selected;
+							object_xs(0) <= 360;
+							object_ys(0) <= 460;
+							object_values(0) <= 1800;
 						when others =>
 							null;
 					end case;
 				end if;				
 				control_state <= object_iter;
-				iter_count <= 0;
+				iter_count <= 1;
 			when object_iter =>
 				-- 敌人攻击（物品消失、空格实例化）、敌人移动（物品时间减少）
 				case object_types(iter_count) is
@@ -375,6 +377,13 @@ begin
 						bullet_update_count <= bullet_update_count + 1;
 					end if;
 				end if;
+				control_state <= update_gun;
+			when update_gun =>
+				if object_values(0) = 0 then
+					object_types(0) <= none;
+				else
+					object_values(0) <= object_values(0) - 1;
+				end if;
 				control_state <= update_stage;
 			when update_stage =>
 				if start_stage = '1' then
@@ -390,7 +399,6 @@ begin
 						add_object_cooldown <= 0;
 						player_hp <= 100;
 						bullet_num <= BULLET_NUM_LIMIT;
-						continuous_shoot <= '0';
 						for i in 0 to OBJECT_LIMIT - 1 loop
 							object_types(i) <= none;
 						end loop;
