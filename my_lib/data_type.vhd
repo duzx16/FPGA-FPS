@@ -30,6 +30,12 @@ package data_type is
 	constant ENEMY_FIRE_ADDR_END:integer := ENEMY_FIRE_ADDR_BEGIN + (2 * HENEMY_HEIGHT * HENEMY_WIDTH - 1);
 	constant MEDICAL_ADDR_BEGIN:integer := ENEMY_FIRE_ADDR_END + 1;
 	constant MEDICAL_ADDR_END:integer := MEDICAL_ADDR_BEGIN + (2 * HMEDICAL_HEIGHT * HMEDICAL_WIDTH - 1);
+	constant START_ADDR_BEGIN:integer := MEDICAL_ADDR_END + 1;
+	constant START_ADDR_END:integer := START_ADDR_BEGIN + 153599;
+	constant WIN_ADDR_BEGIN:integer := START_ADDR_END + 1;
+	constant WIN_ADDR_END:integer := WIN_ADDR_BEGIN + 153599;
+	constant LOSE_ADDR_BEGIN:integer := WIN_ADDR_END + 1;
+	constant LOSE_ADDR_END:integer := LOSE_ADDR_BEGIN + 153599;
 	
 	-- 物体的类型（敌人、医药包、冲锋枪，暂时还没有确定）
 	type object_type is (enemy, medical, tommygun, none);

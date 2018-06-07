@@ -352,9 +352,43 @@ begin
     ----------------------- background --------------------------
     if clk50'event and clk50 = '1' then
         if (gamestart = '1') then
-            q_vga <= "0111111000";
+            if s_x < 640 and s_y < 480 then
+					temp_addr := CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20) + START_ADDR_BEGIN;
+					addr_cnt <= temp_addr;
+					if temp_addr(0) = '0' then
+						q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+					else
+						q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					end if;
+					if(PostOK = '1' and post_select = '1') then
+						q_vga <= "0111000000";
+					elsif(postOK = '1' and post_select = '0') then
+						q_vga <= "0111111000";
+					end if;
+				end if;
+		--===============================================================================
+		------------------------------TODO----------------------------------------
+			elsif (win = '1') then
+--            if s_x < 640 and s_y < 480 then
+--					temp_addr := CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20) + WIN_ADDR_BEGIN;
+--					addr_cnt <= temp_addr;
+--					if temp_addr(0) = '0' then
+--						q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+--					else
+--						q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+--					end if;
+--				end if;
+		--===============================================================================
         elsif (gameover = '1') then
-            q_vga <= "0000001001";
+            if s_x < 640 and s_y < 480 then
+					temp_addr := CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20) + LOSE_ADDR_BEGIN;
+					addr_cnt <= temp_addr;
+					if temp_addr(0) = '0' then
+						q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+					else
+						q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+					end if;
+				end if;
         elsif(HpOK = '1' or enemyHPOK = '1') then   --血量红色
             q_vga <= "0111000000";
         elsif(BulletnumOK = '1') then  --子弹量蓝色
