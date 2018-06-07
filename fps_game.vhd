@@ -74,6 +74,7 @@ component game_controller is
         -- 用于表示是否处于开始界面
         start_stage: out std_logic;
         game_over_stage: out std_logic;
+        game_winning: buffer std_logic;
         -- 表示修改数据是否安全
         data_safe: in std_logic
     );
@@ -100,6 +101,7 @@ component color_controller is
         -- 用于表示是否处于开始界面
         start_stage: in std_logic;
         gameover:in std_logic;
+        game_winning: in std_logic;
         
         --POST
         postX:in std_logic_vector(9 downto 0);
@@ -142,6 +144,7 @@ signal show_fired: std_logic;
 -- 用于表示是否处于开始界面
 signal start_stage: std_logic;
 signal game_over_stage: std_logic;
+signal game_winning: std_logic;
 -- 表示数据是否有效
 signal data_safe: std_logic;
 signal sixtyHz:std_logic;
@@ -171,7 +174,7 @@ begin
         show_post_y => show_post_y,
         -- 都是长度相同的数组，用来表示物体的数据
         object_types => object_types,
-         object_xs => object_xs,
+        object_xs => object_xs,
         object_ys => object_ys,
         object_statuses => object_statuses,
         object_values => object_values,
@@ -184,12 +187,13 @@ begin
         -- 用于表示是否处于开始界面
         start_stage => start_stage,
         game_over_stage => game_over_stage,
+        game_winning => game_winning,
         -- 表示修改数据是否安全
         data_safe => data_safe
         );
     u1:color_controller port map(
         clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, object_values, player_hp, bullet_num
-        ,show_fired, start_stage, game_over_stage, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired,
+        ,show_fired, start_stage, game_over_stage, game_winning, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired,
         base_sram_we, base_sram_oe, base_sram_ce, base_sram_addr, base_sram_data, data_safe
     );
     
