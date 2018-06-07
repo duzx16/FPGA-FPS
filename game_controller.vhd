@@ -32,6 +32,7 @@ entity game_controller is
 		-- 用于表示是否处于开始界面
 		start_stage: buffer std_logic;
 		game_over_stage: buffer std_logic;
+		game_winning: buffer std_logic;
 		-- 表示修改数据是否安全
 		data_safe: in std_logic
 	);
@@ -53,15 +54,17 @@ constant BULLET_UPDATE_LIMIT: integer:= 180;
 constant ENEMY_ACTION_INTEVAL: integer:= 600;
 constant PLAYER_ATK: integer:= 40;
 constant ENEMY_ATK: integer:= 1;
+constant KILL_ENEMY_AIM: integer:=10;
 -- 游戏的状态控制
 type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_gun, update_stage, restart);
-
 signal control_state:control_state_type;
+signal value_changed: std_logic;
+-- 各种各样的count
 signal iter_count: integer range 0 to OBJECT_LIMIT;
 signal bullet_update_count: integer range 0 to BULLET_UPDATE_LIMIT:=0;
 signal cool_down_count: integer range 0 to COOL_DOWN_LIMIT:=0;
-signal value_changed: std_logic;
 signal add_object_cooldown: integer range 0 to ADD_OBJECT_COOLDOWN_LIMIT;
+signal kill_enemy_count: integer range 0 to 100;
 -- 物品状态的一些辅助数据
 type object_count_type is array(0 to OBJECT_LIMIT - 1) of integer range 0 to 1000;
 type object_dir_type is array(0 to OBJECT_LIMIT - 1) of std_logic_vector(1 downto 0);
@@ -192,6 +195,7 @@ begin
 							-- 对敌人进行减血
 							if object_values(post_selected) <= PLAYER_ATK then
 								object_types(post_selected) <= none;
+								kill_enemy_count <= kill_enemy_count + 1;
 							else
 								object_values(post_selected) <= object_values(post_selected) - PLAYER_ATK;
 							end if;
@@ -350,34 +354,11 @@ begin
 						iter_count <= iter_count + 1;
 					end case;
 				if iter_count = OBJECT_LIMIT - 1 then
-					control_state <= update_post;
+					control_state <= update_gun;
 					iter_count <= 0;
 				else
 					iter_count <= iter_count + 1;
 				end if;
-			when update_post =>
-				show_post_x <= post_x;
-				show_post_y <= post_y;
---				show_post_x <= show_post_x + 1;
---				show_post_y <= show_post_y + 1;
---				if show_post_x = 639 then
---					show_post_x <= 0;
---				end if;
---				if show_post_y = 479 then
---					show_post_y <= 0;
---				end if;
-				if bullet_num = 0 then
-					bullet_update_count <= 1;
-				end if;
-				if bullet_update_count > 0 then
-					if bullet_update_count = BULLET_UPDATE_LIMIT then
-						bullet_update_count <= 0;
-						bullet_num <= BULLET_NUM_LIMIT;
-					else
-						bullet_update_count <= bullet_update_count + 1;
-					end if;
-				end if;
-				control_state <= update_gun;
 			when update_gun =>
 				if object_values(0) = 0 then
 					object_types(0) <= none;
@@ -389,10 +370,12 @@ begin
 				if start_stage = '1' then
 					if fired_temp = '1' then
 						start_stage <= '0'; 
+						kill_enemy_count <= 0;
 					end if;
 				elsif game_over_stage = '1' then
 					if fired_temp = '1' then
 						game_over_stage <= '0';
+						game_winning <= '0';
 						start_stage <= '1';
 						cool_down_count <= 0;
 						bullet_update_count <= 0;
@@ -404,13 +387,40 @@ begin
 						end loop;
 					end if;
 				else
-					if player_hp = 0 then
+					if kill_enemy_count = KILL_ENEMY_AIM then
 						game_over_stage <= '1';
+						game_winning <= '1';
+					elsif player_hp = 0 then
+						game_over_stage <= '1';
+						game_winning <= '0';
 					end if;
 				end if;
 				fired_temp <= '0';
-				value_changed <= '1';
+				control_state <= update_post;
+			when update_post =>
+				--show_post_x <= post_x;
+				--show_post_y <= post_y;
+				show_post_x <= show_post_x + 1;
+				show_post_y <= show_post_y + 1;
+				if show_post_x = 639 then
+					show_post_x <= 0;
+				end if;
+				if show_post_y = 479 then
+					show_post_y <= 0;
+				end if;
+				if bullet_num = 0 then
+					bullet_update_count <= 1;
+				end if;
+				if bullet_update_count > 0 then
+					if bullet_update_count = BULLET_UPDATE_LIMIT then
+						bullet_update_count <= 0;
+						bullet_num <= BULLET_NUM_LIMIT;
+					else
+						bullet_update_count <= bullet_update_count + 1;
+					end if;
+				end if;
 				control_state <= waiting;
+				value_changed <= '1';
 			when others =>
 				null;
 		end case;			
