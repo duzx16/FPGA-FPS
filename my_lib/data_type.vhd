@@ -36,6 +36,10 @@ package data_type is
 	constant WIN_ADDR_END:integer := WIN_ADDR_BEGIN + 153599;
 	constant LOSE_ADDR_BEGIN:integer := WIN_ADDR_END + 1;
 	constant LOSE_ADDR_END:integer := LOSE_ADDR_BEGIN + 153599;
+	constant BUTTON_X_BEGIN:integer := 6;
+	constant BUTTON_X_END:integer := 145;
+	constant BUTTON_Y_BEGIN:integer := 406;
+	constant BUTTON_Y_END:integer := 466;
 	
 	-- 物体的类型（敌人、医药包、冲锋枪，暂时还没有确定）
 	type object_type is (enemy, medical, tommygun, none);
