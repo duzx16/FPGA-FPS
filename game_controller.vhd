@@ -52,9 +52,9 @@ constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 2000;
 constant COOL_DOWN_LIMIT: integer:= 30;
 constant BULLET_UPDATE_LIMIT: integer:= 180;
 constant ENEMY_ACTION_INTEVAL: integer:= 600;
-constant PLAYER_ATK: integer:= 40;
+constant PLAYER_ATK: integer:= 400;
 constant ENEMY_ATK: integer:= 1;
-constant KILL_ENEMY_AIM: integer:=10;
+constant KILL_ENEMY_AIM: integer:=2;
 -- 游戏的状态控制
 type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_gun, update_stage, restart);
 signal control_state:control_state_type;
@@ -368,12 +368,13 @@ begin
 				control_state <= update_stage;
 			when update_stage =>
 				if start_stage = '1' then
-					if fired_temp = '1' then
+					if fired_temp = '1' and cool_down_count = 0 then
 						start_stage <= '0'; 
 						kill_enemy_count <= 0;
+						cool_down_count <= COOL_DOWN_LIMIT;
 					end if;
 				elsif game_over_stage = '1' then
-					if fired_temp = '1' then
+					if fired_temp = '1' and cool_down_count = 0 then
 						game_over_stage <= '0';
 						game_winning <= '0';
 						start_stage <= '1';
@@ -385,15 +386,20 @@ begin
 						for i in 0 to OBJECT_LIMIT - 1 loop
 							object_types(i) <= none;
 						end loop;
+						cool_down_count <= COOL_DOWN_LIMIT;
 					end if;
 				else
 					if kill_enemy_count = KILL_ENEMY_AIM then
 						game_over_stage <= '1';
 						game_winning <= '1';
+						show_fired <= '0';
 					elsif player_hp = 0 then
 						game_over_stage <= '1';
 						game_winning <= '0';
 					end if;
+				end if;
+				if cool_down_count > 0 then
+					cool_down_count <= cool_down_count - 1;
 				end if;
 				fired_temp <= '0';
 				control_state <= update_post;
@@ -401,12 +407,12 @@ begin
 				--show_post_x <= post_x;
 				--show_post_y <= post_y;
 				show_post_x <= show_post_x + 1;
-				show_post_y <= show_post_y + 1;
 				if show_post_x = 639 then
 					show_post_x <= 0;
+					show_post_y <= show_post_y + 10;
 				end if;
-				if show_post_y = 479 then
-					show_post_y <= 0;
+				if show_post_y = 479 or show_post_y < 300 then
+					show_post_y <= 300;
 				end if;
 				if bullet_num = 0 then
 					bullet_update_count <= 1;
