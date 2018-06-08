@@ -118,7 +118,7 @@ architecture bhv of vga_calc is
     constant MeEndY : std_logic_vector(8 downto 0):="111011111";
     
     signal postOK, HpOK, enemyHPOK, gunOK, medicalOK, meOK, bulletnumOK, enemyOK, gamestartOK, 
-                gameoverOK, backgroundOK:std_logic;
+                gameoverOK, backgroundOK, buttonOK:std_logic;
                 
     signal enemy_x, medical_x, gun_x:std_logic_vector(9 downto 0);
     signal enemy_y, medical_y, gun_y:std_logic_vector(8 downto 0);
@@ -346,29 +346,49 @@ begin
         end if;
     end if;
 end process;
+----------------------------BUTTON-----------------------------------
+process(clk_0)
+begin
+	buttonOK <= '0';
+	if s_x >= BUTTON_X_BEGIN - 2 and s_x <= BUTTON_X_END + 2 and s_y >= BUTTON_Y_BEGIN - 2 and s_y <= BUTTON_Y_BEGIN then
+		buttonOK <= '1';
+	elsif s_x >= BUTTON_X_BEGIN - 2 and s_x <= BUTTON_X_END + 2 and s_y >= BUTTON_Y_END and s_y <= BUTTON_Y_END + 2 then
+		buttonOK <= '1';
+	elsif s_x >= BUTTON_X_BEGIN - 2 and s_x <= BUTTON_X_BEGIN and s_y >= BUTTON_Y_BEGIN - 2 and s_y <= BUTTON_Y_END + 2 then
+		buttonOK <= '1';
+	elsif s_x >= BUTTON_X_END and s_x <= BUTTON_X_END + 2 and s_y >= BUTTON_Y_BEGIN - 2 and s_y <= BUTTON_Y_END + 2 then
+		buttonOK <= '1';
+	else 
+		buttonOK <= '0';
+	end if;
+end process;
 --++++++++++++++++++++++++  SRAM DATA ++++++++++++++++++++++++++++++++
 process(clk50, reset)
 variable temp_addr:std_logic_vector(19 downto 0):= (others=>'0');
 begin
     ----------------------- background --------------------------
     if clk50'event and clk50 = '1' then
-        if (gamestart = '1') then
+			if(PostOK = '1' and post_select = '1') then
+            q_vga <= "0111000000";
+			elsif(postOK = '1' and post_select = '0') then
+            q_vga <= "0111111000";
+			elsif (gamestart = '1') then
             if s_x < 640 and s_y < 480 then
 					temp_addr := CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20) + START_ADDR_BEGIN;
 					addr_cnt <= temp_addr;
 					if temp_addr(0) = '0' then
 						q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
 					else
-						q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+						q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);	
 					end if;
-					if(PostOK = '1' and post_select = '1') then
-						q_vga <= "0111000000";
-					elsif(postOK = '1' and post_select = '0') then
-						q_vga <= "0111111000";
+					if postX >= BUTTON_X_BEGIN and postx <= BUTTON_X_END and postY >= BUTTON_Y_BEGIN and postY <= BUTTON_Y_END then
+						if(buttonOK = '1') then
+							q_vga <= "0111110000";
+						end if;
 					end if;
-			end if;
+				end if;
 		--===============================================================================
-		elsif (game_winning = '1') then
+			elsif (game_winning = '1') then
             if s_x < 640 and s_y < 480 then
 					temp_addr := CONV_STD_LOGIC_VECTOR(conV_INTEGER(s_x) / 2 + conV_INTEGER(s_y) * 320, 20) + WIN_ADDR_BEGIN;
 					addr_cnt <= temp_addr;
@@ -377,7 +397,7 @@ begin
 					else
 						q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
 					end if;
-			end if;
+				end if;
 		--===============================================================================
         elsif (gameover = '1') then
             if s_x < 640 and s_y < 480 then
@@ -393,10 +413,6 @@ begin
             q_vga <= "0111000000";
         elsif(BulletnumOK = '1') then  --子弹量蓝色
             q_vga <= "0000000111";
-        elsif(PostOK = '1' and post_select = '1') then
-            q_vga <= "0111000000";
-        elsif(postOK = '1' and post_select = '0') then
-            q_vga <= "0111111000";
         elsif(MeOK = '1') then
             if me_firing = '1' then
                 temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(s_x - MeStartX) / 2 + conV_INTEGER(s_y - MestartY) * 80, 20) + ME_ADDR_BEGIN;
