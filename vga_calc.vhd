@@ -316,13 +316,15 @@ begin
         case object_types(cnt) is
             when medical=>
                 if(object_xs(cnt) <= s_x + HMEDICAL_WIDTH and s_x < object_xs(cnt) + HMEDICAL_WIDTH and object_ys(cnt) <= s_y + HMEDICAL_HEIGHT and s_y < object_ys(cnt) + HMEDICAL_HEIGHT) then
-                    medical_x <= s_x + HMEDICAL_WIDTH - object_xs(cnt);
-                    medical_y <= s_y + HMEDICAL_HEIGHT - object_ys(cnt);
-                    medicalOK <= '1';
-                    medical_cnt <= cnt;
-                    exit get_obj;
+                    if((object_xs(cnt) <= s_x + 3 and s_x < object_xs(cnt) + 3) or (object_ys(cnt) <= s_y + 3 and s_y < object_ys(cnt) + 3)) then
+                        medical_x <= s_x + HMEDICAL_WIDTH - object_xs(cnt);
+                        medical_y <= s_y + HMEDICAL_HEIGHT - object_ys(cnt);
+                        medicalOK <= '1';
+                        medical_cnt <= cnt;
+                        exit get_obj;
+                    end if;
                 end if;
-            when others => next get_obj;
+            when others => null;
         end case;
     end loop get_obj;
 end process;

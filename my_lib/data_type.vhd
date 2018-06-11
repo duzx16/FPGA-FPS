@@ -12,8 +12,8 @@ package data_type is
 	constant BULLET_NUM_LIMIT: integer := 20;
 	constant HENEMY_WIDTH: integer:= 25;
 	constant HENEMY_HEIGHT: integer:=40;
-	constant HMEDICAL_WIDTH: integer:=8;
-	constant HMEDICAL_HEIGHT: integer:=8;
+	constant HMEDICAL_WIDTH: integer:=20;
+	constant HMEDICAL_HEIGHT: integer:=20;
 	constant HGUN_HEIGHT: integer:= 15;
 	constant HGUN_WIDTH: integer:=45;
 	constant HALF_Y_LIMIT: integer := 280;
