@@ -13,18 +13,18 @@ port(
 );
 end entity;
 
-architecture struc of RandomNumber is
-signal seed : std_logic_vector(15 downto 0) := "0000000000000000";
+architecture beh of RandomNumber is
+signal feedback : std_logic;
+signal lfsr_reg : std_logic_vector(15 downto 0); 
 begin
-	num <= seed;
-	process(clkin, rst)
-	begin
-		if (rst = '0') then
-			seed <= "0000000000000000";
-		elsif (rising_edge(clkin)) then
-			seed <=
-			shl(seed, "110") + shl(seed, "101") + shl(seed, "100") +
-			shl(seed, "11") + shl(seed, "1") + seed + 59;
-		end if;
-	end process;
-end struc;
+	feedback <= lfsr_reg(7) xor lfsr_reg(0);
+	latch_it: process(clkin, rst) 
+	begin 
+		if (rst = '1') then 
+			lfsr_reg <= (others => '0'); 
+		elsif (clkin = '1' and clkin'event) then 
+			lfsr_reg <= lfsr_reg(lfsr_reg'high - 1 downto 0) & feedback;
+		end if; 
+	end process; 
+	num <= lfsr_reg; 
+end beh;
