@@ -23,6 +23,8 @@ entity fps_game is
     sensor_input: in std_logic;
     -- FOR OPEN FILE
     open_fire: in std_logic;
+	 click_ground: out std_logic;
+	 click_vdd: out std_logic;
     -- VGA(传入color_controller)
     vga_hs, vga_vs: out std_logic;
     vga_r, vga_g, vga_b: out std_logic_vector(2 downto 0);
@@ -200,4 +202,6 @@ begin
     u2:SixtyHzSignalGenerator port map(
         clk100M=>clk, rst=>rst, clk60=>sixtyHz
     );
+	 click_ground <= '0';
+	 click_vdd <= '1';
 end beh;
