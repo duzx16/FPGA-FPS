@@ -113,12 +113,12 @@ begin
 --		object_values(0) <= 1000;
 --		object_counts(0) <= 0;
 --		object_statuses(0) <= normal;
---		object_types(1) <= enemy;
---		object_xs(1) <= 220;
---		object_ys(1) <= 240;
---		object_values(1) <= 100;
---		object_counts(1) <= 0;
---		object_statuses(1) <= normal;
+		object_types(1) <= enemy;
+		object_xs(1) <= 220;
+		object_ys(1) <= 240;
+		object_values(1) <= 100;
+		object_counts(1) <= 0;
+		object_statuses(1) <= normal;
 	elsif rising_edge(clk) then
 		case control_state is
 			when waiting =>
@@ -404,16 +404,16 @@ begin
 				fired_temp <= '0';
 				control_state <= update_post;
 			when update_post =>
-				--show_post_x <= post_x;
-				--show_post_y <= post_y;
-				show_post_x <= show_post_x + 1;
-				if show_post_x = 639 then
-					show_post_x <= 0;
-					show_post_y <= show_post_y + 10;
-				end if;
-				if show_post_y = 479 or show_post_y < 300 then
-					show_post_y <= 300;
-				end if;
+				show_post_x <= post_x;
+				show_post_y <= post_y;
+--				show_post_x <= show_post_x + 1;
+--				if show_post_x = 639 then
+--					show_post_x <= 0;
+--					show_post_y <= show_post_y + 10;
+--				end if;
+--				if show_post_y = 479 or show_post_y < 300 then
+--					show_post_y <= 300;
+--				end if;
 				if bullet_num = 0 then
 					bullet_update_count <= 1;
 				end if;
