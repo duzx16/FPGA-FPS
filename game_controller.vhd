@@ -48,13 +48,13 @@ port(
 );
 end component;
 -- 控制游戏难度的常数
-constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 2000;
+constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 600;
 constant COOL_DOWN_LIMIT: integer:= 30;
 constant BULLET_UPDATE_LIMIT: integer:= 180;
-constant ENEMY_ACTION_INTEVAL: integer:= 600;
-constant PLAYER_ATK: integer:= 400;
-constant ENEMY_ATK: integer:= 1;
-constant KILL_ENEMY_AIM: integer:=2;
+constant ENEMY_ACTION_INTEVAL: integer:= 300;
+constant PLAYER_ATK: integer:= 40;
+constant ENEMY_ATK: integer:= 10;
+constant KILL_ENEMY_AIM: integer:=10;
 -- 游戏的状态控制
 type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_gun, update_stage, restart);
 signal control_state:control_state_type;
@@ -133,7 +133,7 @@ begin
 						else
 							post_selected <= OBJECT_LIMIT;
 							if cool_down_count = 0 then
-								if fired_temp = '1' and bullet_num > 0 then
+								if fired_temp = '1' and bullet_update_count = 0 then
 									if object_types(0) = tommygun then
 										cool_down_count <= 3;
 									else
@@ -327,22 +327,24 @@ begin
 					when none =>
 						-- 这里的数值决定了不同的物品被添加的概率
 						if add_object_cooldown = 0 then
-							random_num := CONV_INTEGER(random_vector(15 downto 13));
-							object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
-							object_ys(iter_count) <= HALF_Y_LIMIT;
+							random_num := CONV_INTEGER(random_vector(15 downto 12));
 							object_statuses(iter_count) <= normal;
-							if random_num < 5 then
+							if random_num < 12 then
 								-- 添加敌人
+								object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
+								object_ys(iter_count) <= HALF_Y_LIMIT;
 								object_types(iter_count) <= enemy;
 								object_counts(iter_count) <= 0;
 								object_values(iter_count) <= 100;
-							elsif random_num < 6 then
+							elsif random_num < 14 then
 								-- 添加医药包
 								object_types(iter_count) <= medical;
 								object_counts(iter_count) <= 0;
 								object_values(iter_count) <= 1024;
 							else
 								-- 添加冲锋枪
+								object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
+								object_ys(iter_count) <= HALF_Y_LIMIT + 80;
 								object_types(iter_count) <= tommygun;
 								object_counts(iter_count) <= 0;
 								object_values(iter_count) <= 1024;
@@ -373,6 +375,9 @@ begin
 						kill_enemy_count <= 0;
 						cool_down_count <= COOL_DOWN_LIMIT;
 					end if;
+					if cool_down_count > 0 then
+						cool_down_count <= cool_down_count - 1;
+					end if;
 				elsif game_over_stage = '1' then
 					if fired_temp = '1' and cool_down_count = 0 then
 						game_over_stage <= '0';
@@ -388,6 +393,9 @@ begin
 						end loop;
 						cool_down_count <= COOL_DOWN_LIMIT;
 					end if;
+					if cool_down_count > 0 then
+						cool_down_count <= cool_down_count - 1;
+					end if;
 				else
 					if kill_enemy_count = KILL_ENEMY_AIM then
 						game_over_stage <= '1';
@@ -397,9 +405,6 @@ begin
 						game_over_stage <= '1';
 						game_winning <= '0';
 					end if;
-				end if;
-				if cool_down_count > 0 then
-					cool_down_count <= cool_down_count - 1;
 				end if;
 				fired_temp <= '0';
 				control_state <= update_post;
@@ -418,6 +423,9 @@ begin
 					bullet_update_count <= 1;
 				end if;
 				if bullet_update_count > 0 then
+					if bullet_num < BULLET_NUM_LIMIT and bullet_update_count MOD 5 = 0 then
+						bullet_num <= bullet_num + 1;
+					end if;
 					if bullet_update_count = BULLET_UPDATE_LIMIT then
 						bullet_update_count <= 0;
 						bullet_num <= BULLET_NUM_LIMIT;
