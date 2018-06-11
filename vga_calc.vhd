@@ -433,7 +433,7 @@ begin
                     q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
                 end if;
             end if;
-            q_vga <= "0000111000";
+            --q_vga <= "0000111000";
         elsif(gunOK = '1') then
             if(object_statuses(gun_cnt) = selected) then
                 temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(gun_x) / 2 + 
@@ -444,7 +444,7 @@ begin
                 else
                     q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
                 end if;
-                q_vga <= "0000111000";
+                --q_vga <= "0000111000";
             else
                 temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(gun_x) / 2 + 
                     conV_INTEGER(gun_y) * HGUN_WIDTH, 20) + GUN_ADDR_BEGIN;
@@ -454,7 +454,7 @@ begin
                 else
                     q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
                 end if;
-                q_vga <= "0111111000";
+                --q_vga <= "0111111000";
             end if;
             
         elsif(enemyOK = '1') then
@@ -467,7 +467,7 @@ begin
                 else
                     q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
                 end if;
-                q_vga <= "0111111111";
+                --q_vga <= "0111111111";
             elsif(object_statuses(enemy_cnt) = attack) then
                 temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(enemy_x) / 2 + 
                     conV_INTEGER(enemy_y) * HENEMY_WIDTH, 20) + ENEMY_FIRE_ADDR_BEGIN;
@@ -477,7 +477,7 @@ begin
                 else
                     q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
                 end if;
-                q_vga <= "0000111000";
+                --q_vga <= "0000111000";
             else
                 temp_addr := conV_STD_LOGIC_VECTOR(CONV_INTEGER(enemy_x) / 2 + 
                     conV_INTEGER(enemy_y) * HENEMY_WIDTH, 20) + ENEMY_ADDR_BEGIN;
@@ -487,28 +487,28 @@ begin
                 else
                     q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
                 end if;
-                q_vga <= "0000111111";
+                --q_vga <= "0000111111";
             end if;
         elsif(medicalOK = '1') then
             if(object_statuses(medical_cnt) = selected) then
-                temp_addr := conV_STD_LOGIC_VECTOR(CONV_INTEGER(medical_x) / 2 + 
-                    conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
-                addr_cnt <= temp_addr;
-                if temp_addr(0) = '0' then
-                    q_vga <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
-                else
-                    q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
-                end if;
-                q_vga <= "0000000000";
+--                temp_addr := conV_STD_LOGIC_VECTOR(CONV_INTEGER(medical_x) / 2 + 
+--                    conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
+--                addr_cnt <= temp_addr;
+--                if temp_addr(0) = '0' then
+--                    q_vga <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
+--                else
+--                    q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
+--                end if;
+                q_vga <= "0111111000";
             else
-                temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(medical_x) / 2 + 
-                    conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
-                addr_cnt <= temp_addr;
-                if temp_addr(0) = '0' then
-                    q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
-                else
-                    q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
-                end if;
+--                temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(medical_x) / 2 + 
+--                    conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
+--                addr_cnt <= temp_addr;
+--                if temp_addr(0) = '0' then
+--                    q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
+--                else
+--                    q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
+--                end if;
                 q_vga <= "0111000000";
             end if;
         elsif s_x < 640 and s_y < 480 then          
@@ -519,7 +519,7 @@ begin
             else
                 q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
             end if;
-            q_vga <= "0111111111";
+            --q_vga <= "0111111111";
         else
             q_vga <= "0111111111";
         end if;
