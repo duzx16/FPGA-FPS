@@ -48,13 +48,13 @@ port(
 );
 end component;
 -- 控制游戏难度的常数
-constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 600;
+constant ADD_OBJECT_COOLDOWN_LIMIT: integer:= 900;
 constant COOL_DOWN_LIMIT: integer:= 30;
 constant BULLET_UPDATE_LIMIT: integer:= 180;
-constant ENEMY_ACTION_INTEVAL: integer:= 300;
+constant ENEMY_ACTION_INTEVAL: integer:= 450;
 constant PLAYER_ATK: integer:= 40;
 constant ENEMY_ATK: integer:= 10;
-constant KILL_ENEMY_AIM: integer:=10;
+constant KILL_ENEMY_AIM: integer:=15;
 -- 游戏的状态控制
 type control_state_type is (waiting, post_iter, post_act, object_iter, update_post, update_gun, update_stage, restart);
 signal control_state:control_state_type;
@@ -401,6 +401,7 @@ begin
 						game_over_stage <= '1';
 						game_winning <= '1';
 						show_fired <= '0';
+                  cool_down_count <= COOL_DOWN_LIMIT;
 					elsif player_hp = 0 then
 						game_over_stage <= '1';
 						game_winning <= '0';
@@ -423,7 +424,7 @@ begin
 					bullet_update_count <= 1;
 				end if;
 				if bullet_update_count > 0 then
-					if bullet_num < BULLET_NUM_LIMIT and bullet_update_count MOD 5 = 0 then
+					if bullet_num < BULLET_NUM_LIMIT and bullet_update_count MOD 9 = 0 then
 						bullet_num <= bullet_num + 1;
 					end if;
 					if bullet_update_count = BULLET_UPDATE_LIMIT then
