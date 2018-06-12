@@ -130,7 +130,7 @@ begin
 	process(angx, angy, angz)
 	variable temp_x, temp_y: integer;
 	begin
-		temp_x := -(angz) * X_LIMIT / 56  + X_LIMIT / 2 - 320;
+		temp_x := -(angz) * X_LIMIT / 56  + X_LIMIT / 2 - 380;
 		temp_y := -(angx ) * Y_LIMIT / 56 + Y_LIMIT / 2;
 		if temp_x >= X_LIMIT then
 			post_x <= X_LIMIT - 1;
