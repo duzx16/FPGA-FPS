@@ -44,30 +44,6 @@ end entity;
 
 
 architecture bhv of color_controller is
-
-type status is
-	(
-		IDLE,
-		GAME_START,
-		READ_HP,
-		READ_BULLNUM,
-		READ_POST,
-		READ_GUN,
-		READ_MEDICAL,
-		READ_ME,
-		READ_ENEMY,
-		GAME_OVER,
-		WORK_FINISH,
-		WORK_FINISH_DELAY
-	);
-	
-type read_status is
-	(
-		READING_S,
-		READING_X,
-		READING_Y,
-		READING_TYPE
-	);
 	
 	component vga_calc is
 		port(
@@ -105,9 +81,6 @@ type read_status is
 		data_safe:out std_logic
 	);
 	end component;
-	
-	signal cur_work : status;
-	signal rd_status : read_status;
 	
 begin
 	u1:vga_calc port map(
