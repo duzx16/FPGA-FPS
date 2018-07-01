@@ -6,7 +6,6 @@ use ieee.numeric_std.all;
 
 entity RandomNumber is
 port(
---basic	
 	clkin : in std_logic;
 	rst : in std_logic;
 	num : out std_logic_vector(15 downto 0) --random number

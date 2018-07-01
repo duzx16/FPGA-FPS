@@ -6,6 +6,7 @@ use ieee.std_logic_arith.all;
 library my_lib;
 use my_lib.data_type.all;
 
+-- 游戏的顶层实体
 entity fps_game is
     port(
     -- LED OUTPUT
@@ -53,7 +54,7 @@ end component;
 component game_controller is
     port(
         -- 100M时钟
-       clk: in std_logic;
+        clk: in std_logic;
         rst: in std_logic;
         post_x: in integer range 0 to X_LIMIT;
         post_y: in integer range 0 to Y_LIMIT;
@@ -152,6 +153,7 @@ signal data_safe: std_logic;
 signal sixtyHz:std_logic;
 
 begin
+    -- 传感器控制模块
     post_sensor: sensor port map(
         rst => rst,
         clk => clk,
@@ -165,6 +167,7 @@ begin
         led_y0 => led_y0,
         led_z0 => led_z0
     );
+    -- 游戏逻辑模块
     controller: game_controller port map(
         rst => rst,
         clk => clk,
@@ -193,6 +196,7 @@ begin
         -- 表示修改数据是否安全
         data_safe => data_safe
         );
+    -- 显示控制模块
     u1:color_controller port map(
         clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, object_values, player_hp, bullet_num
         ,show_fired, start_stage, game_over_stage, game_winning, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired,
