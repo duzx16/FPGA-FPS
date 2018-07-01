@@ -491,24 +491,8 @@ begin
             end if;
         elsif(medicalOK = '1') then
             if(object_statuses(medical_cnt) = selected) then
---                temp_addr := conV_STD_LOGIC_VECTOR(CONV_INTEGER(medical_x) / 2 + 
---                    conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
---                addr_cnt <= temp_addr;
---                if temp_addr(0) = '0' then
---                    q_vga <= "0" & "111" & data_read(28 downto 26) & data_read(25 downto 23);
---                else
---                    q_vga <= "0" & "111" & data_read(12 downto 10) & data_read(9 downto 7);
---                end if;
                 q_vga <= "0111111000";
             else
---                temp_addr := conV_STD_LOGIC_VECTOR(conV_INTEGER(medical_x) / 2 + 
---                    conV_INTEGER(medical_y) * HMEDICAL_WIDTH, 20) + MEDICAL_ADDR_BEGIN;
---                addr_cnt <= temp_addr;
---                if temp_addr(0) = '0' then
---                    q_vga <= "0" & data_read(31 downto 29) & data_read(28 downto 26) & data_read(25 downto 23);
---                else
---                    q_vga <= "0" & data_read(15 downto 13) & data_read(12 downto 10) & data_read(9 downto 7);
---                end if;
                 q_vga <= "0111000000";
             end if;
         elsif s_x < 640 and s_y < 480 then          
@@ -528,47 +512,5 @@ begin
     
     -------------------------------------------------------------
 end process;
---+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-------------------------Connect2VGA640480------------------------------
---process(clk_0)
---begin
---  if(BoarderOK = '1') then
---      q_vga <= "0111111111";
---  end if;
---  -------------------TODO-----------------------
---  
---  if(gamestart = '1') then                           
---      if(GameoverOK = '1') then
---          q_vga <= "0111111000";
---      else
---          q_vga <= "0000001001";
---      end if;
---  elsif(gameover = '1') then
---      if GameoverOK <= '1' then
---          q_vga <= "0111000000";
---      else
---          q_vga <= "0000001001";
---      end if;
---  else
---      if(HpOK = '1') then   --血量红色
---          q_vga <= "0111000000";
---      elsif(BulletnumOK = '1') then  --子弹量蓝色
---          q_vga <= "0000000111";
---      elsif(PostOK = '1') then  --准星黑色
---          q_vga <= q_vga;
---      elsif(gunOK = '1')then  --枪橙色
---          q_vga <= q_vga;
---      elsif(medicalOK = '1') then  --医药包红色
---          q_vga <= q_vga;
---      elsif(MeOK = '1') then  --我绿色
---          q_vga <= q_vga;
---      elsif(enemyOK = '1') then  --敌人黄色
---          q_vga <= q_vga;
---      else
---          q_vga <= q_vga;
---      end if;
---  end if;
---end process;
------------------------------------------------------------------------
 end bhv;
