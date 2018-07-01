@@ -8,9 +8,10 @@ use work.data_type.all;
 
 entity game_controller is
 	port(
-		-- 100M时钟
-	   clk: in std_logic;
+		-- 100M时钟和复位信号
+	    clk: in std_logic;
 		rst: in std_logic;
+		-- 准星位置与开火
 		post_x: in integer range 0 to X_LIMIT;
 		post_y: in integer range 0 to Y_LIMIT;
 		open_fire: in std_logic;
@@ -29,7 +30,7 @@ entity game_controller is
 		bullet_num: buffer integer range 0 to BULLET_NUM_LIMIT;
 		-- 用于表示是否处于开火
 		show_fired: out std_logic;
-		-- 用于表示是否处于开始界面
+		-- 用于表示当前所处的游戏阶段
 		start_stage: buffer std_logic;
 		game_over_stage: buffer std_logic;
 		game_winning: buffer std_logic;
@@ -39,9 +40,9 @@ entity game_controller is
 end entity;
 
 architecture beh of game_controller is
+-- 随机数生成器
 component RandomNumber is
 port(
---basic	
 	clkin : in std_logic;
 	rst : in std_logic;
 	num : out std_logic_vector(15 downto 0) --random number
@@ -72,8 +73,6 @@ signal object_counts: object_count_type;
 signal object_dirs: object_dir_type;
 -- 表示玩家是否进行了射击
 signal fired_temp: std_logic;
--- 表示玩家是否有冲锋枪
--- 现在这个信号被位置0的type代替
 -- 表示准星选择的目标
 signal post_selected: integer range 0 to OBJECT_LIMIT;
 -- 随机数用于敌人移动、物品生成
@@ -107,18 +106,19 @@ begin
 		for i in 0 to OBJECT_LIMIT - 1 loop
 			object_types(i) <= none;
 		end loop;
+		-- 调试用
 --		object_types(0) <= tommygun;
 --		object_xs(0) <= 320;
 --		object_ys(0) <= 240;
 --		object_values(0) <= 1000;
 --		object_counts(0) <= 0;
 --		object_statuses(0) <= normal;
-		object_types(1) <= enemy;
-		object_xs(1) <= 220;
-		object_ys(1) <= 240;
-		object_values(1) <= 100;
-		object_counts(1) <= 0;
-		object_statuses(1) <= normal;
+--		object_types(1) <= enemy;
+--		object_xs(1) <= 220;
+--		object_ys(1) <= 240;
+--		object_values(1) <= 100;
+--		object_counts(1) <= 0;
+--		object_statuses(1) <= normal;
 	elsif rising_edge(clk) then
 		case control_state is
 			when waiting =>
@@ -132,8 +132,10 @@ begin
 							control_state <= update_stage;
 						else
 							post_selected <= OBJECT_LIMIT;
+							-- 如果不出在枪支冷却，则开火
 							if cool_down_count = 0 then
 								if fired_temp = '1' and bullet_update_count = 0 then
+									-- 有冲锋枪时冷却较短
 									if object_types(0) = tommygun then
 										cool_down_count <= 3;
 									else
@@ -161,7 +163,7 @@ begin
 					value_changed <= '0';
 				end if;
 			when post_iter =>
-				-- 这里的数值决定了物品包围盒的大小
+				-- 判断准星是否在某个物品上
 				case object_types(iter_count) is
 					when enemy =>
 						if abs(show_post_x - object_xs(iter_count)) < HENEMY_WIDTH and abs(show_post_y - object_ys(iter_count)) < HENEMY_HEIGHT then
@@ -227,6 +229,7 @@ begin
 				-- 敌人攻击（物品消失、空格实例化）、敌人移动（物品时间减少）
 				case object_types(iter_count) is
 					when enemy =>
+						-- 0:开始移动
 						if object_counts(iter_count) = 0 then
 							-- 决定敌人移动的方向
 							if random_vector(0) = '1' then
@@ -257,7 +260,7 @@ begin
 							end if;
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
 						elsif object_counts(iter_count) <= 30 then
-							-- 进行敌人的移动
+							-- 1-30:进行敌人的移动
 							if object_dirs(iter_count)(1) = '1' then
 								if object_ys(iter_count) + HENEMY_HEIGHT < Y_LIMIT then
 									object_ys(iter_count) <= object_ys(iter_count) + 1;
@@ -280,7 +283,7 @@ begin
 						-- 这里的数值决定了敌方动作的长度
 						elsif object_counts(iter_count) <= ENEMY_ACTION_INTEVAL then
 							if object_counts(iter_count) = ENEMY_ACTION_INTEVAL then
-								-- 进行开火，我方生命下降
+								-- -1:进行开火，我方生命下降
 								if player_hp <= ENEMY_ATK then
 									player_hp <= 0;
 								else
@@ -289,14 +292,14 @@ begin
 								object_statuses(iter_count) <= normal;
 								object_counts(iter_count) <= 0;
 							elsif object_counts(iter_count) = ENEMY_ACTION_INTEVAL - 60 then
-								-- 开始进入开火状态
+								-- (-61)-(-2):开始进入开火状态
 								object_statuses(iter_count) <= attack;
 								object_counts(iter_count) <= object_counts(iter_count) + 1;
 							else
 								object_counts(iter_count) <= object_counts(iter_count) + 1;
 							end if;
 						else
-							-- 在150时被攻击的状态终止
+							-- ACTION_INTEVA+60:被攻击的状态终止
 							if object_counts(iter_count) = ENEMY_ACTION_INTEVAL + 60 then
 								object_statuses(iter_count) <= normal;
 								object_counts(iter_count) <= 0;
@@ -308,9 +311,10 @@ begin
 						-- 物体消失的判定
 						if object_values(iter_count) = 0 or object_counts(iter_count) = 40 then
 							object_types(iter_count) <= none;
-						-- 物体被选择的时长的判定
+						-- 物体被选择的状态更新
 						elsif object_statuses(iter_count) = selected then
 							object_counts(iter_count) <= object_counts(iter_count) + 1;
+						-- 物品剩余时间减少
 						else
 							object_values(iter_count) <= object_values(iter_count) - 1;
 						end if;
@@ -331,7 +335,7 @@ begin
 							object_statuses(iter_count) <= normal;
 							if random_num < 12 then
 								-- 添加敌人
-								object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
+								object_xs(iter_count) <= CONV_INTEGER(random_vector(10 downto 2)) + 74;
 								object_ys(iter_count) <= HALF_Y_LIMIT;
 								object_types(iter_count) <= enemy;
 								object_counts(iter_count) <= 0;
@@ -343,7 +347,7 @@ begin
 								object_values(iter_count) <= 1024;
 							else
 								-- 添加冲锋枪
-								object_xs(iter_count) <= CONV_INTEGER(random_vector(8 downto 0)) + 74;
+								object_xs(iter_count) <= CONV_INTEGER(random_vector(10 downto 2)) + 74;
 								object_ys(iter_count) <= HALF_Y_LIMIT + 80;
 								object_types(iter_count) <= tommygun;
 								object_counts(iter_count) <= 0;
@@ -362,6 +366,7 @@ begin
 					iter_count <= iter_count + 1;
 				end if;
 			when update_gun =>
+				-- 更新冲锋枪效果
 				if object_values(0) = 0 then
 					object_types(0) <= none;
 				else
@@ -370,6 +375,7 @@ begin
 				control_state <= update_stage;
 			when update_stage =>
 				if start_stage = '1' then
+					-- 从开始状态进入游戏
 					if fired_temp = '1' and cool_down_count = 0 then
 						start_stage <= '0'; 
 						kill_enemy_count <= 0;
@@ -379,6 +385,7 @@ begin
 						cool_down_count <= cool_down_count - 1;
 					end if;
 				elsif game_over_stage = '1' then
+					-- 从结束状态重新开始
 					if fired_temp = '1' and cool_down_count = 0 then
 						game_over_stage <= '0';
 						game_winning <= '0';
@@ -397,11 +404,13 @@ begin
 						cool_down_count <= cool_down_count - 1;
 					end if;
 				else
+					-- 游戏获胜的判定
 					if kill_enemy_count = KILL_ENEMY_AIM then
 						game_over_stage <= '1';
 						game_winning <= '1';
 						show_fired <= '0';
                   cool_down_count <= COOL_DOWN_LIMIT;
+                  	-- 游戏失败的判定
 					elsif player_hp = 0 then
 						game_over_stage <= '1';
 						game_winning <= '0';
@@ -410,6 +419,7 @@ begin
 				fired_temp <= '0';
 				control_state <= update_post;
 			when update_post =>
+				-- 更新准星位置
 				show_post_x <= post_x;
 				show_post_y <= post_y;
 --				show_post_x <= show_post_x + 1;
@@ -420,9 +430,11 @@ begin
 --				if show_post_y = 479 or show_post_y < 300 then
 --					show_post_y <= 300;
 --				end if;
+				-- 判定进入添加子弹阶段
 				if bullet_num = 0 then
 					bullet_update_count <= 1;
 				end if;
+				-- 添加子弹阶段
 				if bullet_update_count > 0 then
 					if bullet_num < BULLET_NUM_LIMIT and bullet_update_count MOD 9 = 0 then
 						bullet_num <= bullet_num + 1;
