@@ -8,8 +8,8 @@ entity vga640480 is
 			reset       :         in  STD_LOGIC;
 			clk_0       :         in  STD_LOGIC; --100M时钟输入
 			hs,vs       :         out STD_LOGIC; --行同步、场同步信号
-			vector_x_out   :   out std_LOGIC_VECTOR(9 downto 0);
-			vector_y_out :     out std_LOGIC_vector(8 downto 0);
+			vector_x_out   :   out std_LOGIC_VECTOR(9 downto 0);  --扫描位置的横坐标
+			vector_y_out :     out std_LOGIC_vector(8 downto 0);  --扫描位置的纵坐标
 			clk50 : out std_logic;
 			data_safe:out std_logic;
 			q : in std_logic_vector(9 downto 0);
