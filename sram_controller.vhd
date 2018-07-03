@@ -5,8 +5,8 @@ use ieee.std_logic_arith.all;
 entity sram_controller is
 	port(
 		clk_0 : in std_logic;  --25M
-		rwselect : in std_logic;   --read for '0'
-		addr: in std_logic_vector(19 downto 0);
+		rwselect : in std_logic;   --读写使能端，0代表读数据
+		addr: in std_logic_vector(19 downto 0);  --传入sram中待读取的地址
 		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
 		base_sram_addr:out std_logic_vector(19 downto 0);
 		base_sram_data:inout std_logic_vector(31 downto 0);
@@ -22,6 +22,7 @@ begin
 	process(clk_0)
 	begin
 		if clk_0'event and clk_0 = '1' then
+			--读
 			if rwselect = '0' then
 				base_sram_we <= '1';
 				base_sram_oe <= '0';
@@ -29,6 +30,7 @@ begin
 				data_read <= base_sram_data;
 				base_sram_data <= (others => 'Z');
 			else
+			--写
 				base_sram_we <= '0';
 				base_sram_ce <= '0';
 				base_sram_oe <= '1';
