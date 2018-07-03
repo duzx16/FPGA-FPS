@@ -119,14 +119,6 @@ component color_controller is
     );
 end component;
 
-component SixtyHzSignalGenerator is
-    port(
-        clk100M:in std_logic;
-        rst:in std_logic;
-        clk60:out std_logic
-    );
-end component;
-
 -- 显示器显示的准星的位置
 signal show_post_x: integer range 0 to X_LIMIT;
 signal show_post_y: integer range 0 to Y_LIMIT;
@@ -201,10 +193,6 @@ begin
         clk, sixtyHz, rst, vga_hs, vga_vs, vga_r, vga_g, vga_b, object_types, object_xs, object_ys, object_statuses, object_values, player_hp, bullet_num
         ,show_fired, start_stage, game_over_stage, game_winning, conv_STD_LOGIC_VECTOR(show_post_x,10), CONV_STD_LOGIC_VECTOR(show_post_y,9), show_fired,
         base_sram_we, base_sram_oe, base_sram_ce, base_sram_addr, base_sram_data, data_safe
-    );
-    
-    u2:SixtyHzSignalGenerator port map(
-        clk100M=>clk, rst=>rst, clk60=>sixtyHz
     );
 	 click_ground <= '0';
 	 click_vdd <= '1';
