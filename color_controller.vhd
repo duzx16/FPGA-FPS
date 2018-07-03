@@ -10,15 +10,15 @@ entity color_controller is
 	port(		
 		clk_0: in std_logic; --100MHz
 		clk_w : in std_logic;  --60Hz
-		reset: in std_logic;
-		hs,vs:out std_logic;
+		reset: in std_logic; 
+		hs,vs:out std_logic; --行同步信号、场同步信号
 		r,g,b  : out std_logic_vector(2 downto 0);
 		
-		object_types: in object_type_array;
-      	object_xs: in object_x_array;
-      	object_ys: in object_y_array;
-      	object_statuses: in object_status_array;
-		object_values: in object_value_array;
+		object_types: in object_type_array; --物体的种类
+      	object_xs: in object_x_array;  --物体的横坐标
+      	object_ys: in object_y_array;  --物体的纵坐标
+      	object_statuses: in object_status_array;  --物体的状态，被选取等
+		object_values: in object_value_array;  --物体的值，敌人的血量、枪支的存在时间等
 		-- 玩家的数据
 		player_hp: in integer range 0 to PLAYER_HP_LIMIT;
 		-- 枪支相关的数据
@@ -34,11 +34,11 @@ entity color_controller is
 		postY:in std_logic_vector(8 downto 0);
 		post_select:in std_logic;  --准星选中，开火或者选物品
 		
-		base_sram_we, base_sram_oe, base_sram_ce : out std_logic;
-		base_sram_addr : out std_logic_vector(19 downto 0);
-		base_sram_data : inout std_logic_vector(31 downto 0);
+		base_sram_we, base_sram_oe, base_sram_ce : out std_logic; --sram写使能、读使能、片选使能
+		base_sram_addr : out std_logic_vector(19 downto 0);  --sram中存储的地址
+		base_sram_data : inout std_logic_vector(31 downto 0);  --sram中存储的数据
 		
-		data_safe: out std_logic
+		data_safe: out std_logic  --表示可以安全的更新信息
 	);
 end entity;
 
@@ -83,6 +83,7 @@ architecture bhv of color_controller is
 	end component;
 	
 begin
+	--例化vga_calc
 	u1:vga_calc port map(
 								clk_0, reset, hs, vs, r, g, b, start_stage, gameover, game_winning,
 								postX, postY, show_fired, player_hp, bullet_num,
